@@ -147,17 +147,17 @@ export const WeddingDetailsSection: React.FC = () => {
                   href={weddingData.ceremony.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
                 >
                   <Navigation className="w-3.5 h-3.5 text-amber-200" />
-                  <span>Google Maps</span>
+                  <span>Maps</span>
                 </a>
 
                 <a
                   href={weddingData.ceremony.wazeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Waze</span>
@@ -262,17 +262,17 @@ export const WeddingDetailsSection: React.FC = () => {
                   href={weddingData.reception.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
                 >
                   <Navigation className="w-3.5 h-3.5 text-amber-200" />
-                  <span>Google Maps</span>
+                  <span>Maps</span>
                 </a>
 
                 <a
                   href={weddingData.reception.wazeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Waze</span>
