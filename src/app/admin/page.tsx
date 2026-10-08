@@ -1195,7 +1195,13 @@ export default function AdminPage() {
                             className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs"
                           >
                             <div>
-                              <p className="font-bold text-slate-800">{m.name}</p>
+                              <div className="space-y-0.5">
+                                {m.name.split("&").map((singleName, sIdx) => (
+                                  <p key={sIdx} className="font-bold text-slate-800">
+                                    {singleName.trim()}
+                                  </p>
+                                ))}
+                              </div>
                               <p className="text-[10px] text-slate-400 uppercase">{m.role}</p>
                             </div>
                             <button

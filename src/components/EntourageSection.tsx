@@ -131,12 +131,19 @@ export const EntourageSection: React.FC = () => {
                   key={member.id}
                   className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white via-blue-50/40 to-white border border-blue-100 shadow-2xs hover:border-blue-300 transition-all flex flex-col justify-center text-center group"
                 >
-                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#7094b7] font-semibold mb-0.5 group-hover:text-blue-800 transition-colors">
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#7094b7] font-semibold mb-1 group-hover:text-blue-800 transition-colors">
                     {member.role}
                   </p>
-                  <p className="font-serif-title text-xs sm:text-sm font-bold text-[#1b3b5f] leading-snug">
-                    {member.name}
-                  </p>
+                  <div className="space-y-0.5">
+                    {member.name.split("&").map((n, idx) => (
+                      <p
+                        key={idx}
+                        className="font-serif-title text-xs sm:text-sm font-bold text-[#1b3b5f] leading-snug"
+                      >
+                        {n.trim()}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

@@ -319,27 +319,30 @@ export const RsvpSection: React.FC = () => {
 
                 {/* Autocomplete Dropdown */}
                 {matchingParties.length > 0 && !selectedParty && (
-                  <div className="mt-2 bg-white rounded-2xl border border-blue-200 shadow-xl overflow-hidden divide-y divide-slate-100 z-30">
-                    <div className="p-2.5 bg-blue-50/80 text-[11px] text-[#1b3b5f] font-semibold flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                      <span>Matching Invitations Found — Click to Select:</span>
+                  <div className="mt-2.5 bg-white rounded-2xl border border-blue-200 shadow-xl overflow-hidden divide-y divide-slate-100 z-30">
+                    <div className="px-3.5 py-2.5 bg-blue-50/90 text-xs text-[#1b3b5f] font-semibold flex items-center justify-between">
+                      <span>Matching Invitations:</span>
+                      <span className="text-[11px] text-blue-600 font-normal">
+                        Tap to select your invitation
+                      </span>
                     </div>
                     {matchingParties.map((party) => (
                       <div
                         key={party.id}
                         onClick={() => handleSelectParty(party)}
-                        className="p-3.5 hover:bg-blue-50/60 cursor-pointer transition-colors flex items-center justify-between group"
+                        className="p-3.5 sm:p-4 hover:bg-blue-50/70 cursor-pointer transition-all flex items-center justify-between gap-3 group active:bg-blue-100"
                       >
-                        <div>
-                          <p className="font-serif-title text-sm font-bold text-[#1b3b5f] group-hover:text-blue-700">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-serif-title text-sm sm:text-base font-bold text-[#1b3b5f] group-hover:text-blue-800 leading-snug">
                             {party.partyName}
                           </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            Primary: <strong className="text-slate-700">{party.primaryGuest}</strong> &bull; {party.members.length} Invited Seat(s)
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                            {party.members.length} Invited Seat{party.members.length > 1 ? "s" : ""}
                           </p>
                         </div>
-                        <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-900 text-xs font-semibold group-hover:bg-[#1b3b5f] group-hover:text-white transition-colors">
-                          Select &rarr;
+                        <span className="shrink-0 px-3 py-1.5 rounded-full bg-blue-100 text-blue-900 text-xs font-semibold group-hover:bg-[#1b3b5f] group-hover:text-white transition-colors inline-flex items-center gap-1 shadow-2xs whitespace-nowrap">
+                          <span>Select</span>
+                          <span>&rarr;</span>
                         </span>
                       </div>
                     ))}
