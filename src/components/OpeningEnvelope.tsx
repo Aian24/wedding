@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import confetti from "canvas-confetti";
-import { weddingAudio } from "@/lib/soundSynthesizer";
+import { weddingMusic } from "@/lib/youtubeAudio";
 
 interface OpeningEnvelopeProps {
   onOpen: () => void;
@@ -29,9 +29,9 @@ export const OpeningEnvelope: React.FC<OpeningEnvelopeProps> = ({ onOpen, isOpen
     if (isOpening) return;
     setIsOpening(true);
 
-    // 1. Play Canon in D Serenade
+    // 1. Play YouTube Wedding Song "Dear Biyenan"
     try {
-      weddingAudio.play();
+      weddingMusic.play();
     } catch {
       // ignore
     }

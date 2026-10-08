@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Music, Volume2, VolumeX, Play, Pause, Disc } from "lucide-react";
-import { weddingAudio } from "@/lib/soundSynthesizer";
+import { Music, Volume2, VolumeX, Play, Pause, Disc, ExternalLink } from "lucide-react";
+import { weddingMusic } from "@/lib/youtubeAudio";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const MusicPlayer: React.FC = () => {
@@ -11,26 +11,19 @@ export const MusicPlayer: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   useEffect(() => {
-    // Sync status periodically
-    const interval = setInterval(() => {
-      setIsPlaying(weddingAudio.getStatus());
-    }, 1000);
-    return () => clearInterval(interval);
+    const unsubscribe = weddingMusic.subscribe((state) => {
+      setIsPlaying(state.isPlaying);
+      setIsMuted(state.isMuted);
+    });
+    return () => unsubscribe();
   }, []);
 
   const togglePlayback = () => {
-    const newState = weddingAudio.toggle();
-    setIsPlaying(newState);
+    weddingMusic.toggle();
   };
 
   const toggleMute = () => {
-    if (isMuted) {
-      weddingAudio.setVolume(0.8);
-      setIsMuted(false);
-    } else {
-      weddingAudio.setVolume(0);
-      setIsMuted(true);
-    }
+    weddingMusic.toggleMute();
   };
 
   return (
@@ -49,7 +42,7 @@ export const MusicPlayer: React.FC = () => {
               className={`w-6 h-6 text-amber-300 ${
                 isPlaying ? "animate-spin" : ""
               }`}
-              style={{ animationDuration: "4s" }}
+              style={{ animationDuration: "3.5s" }}
             />
             {isPlaying && (
               <span className="absolute w-2 h-2 rounded-full bg-emerald-400 -top-0.5 -right-0.5 animate-ping" />
@@ -57,11 +50,11 @@ export const MusicPlayer: React.FC = () => {
           </div>
 
           <div className="hidden sm:flex flex-col text-left pr-1">
-            <span className="text-[10px] uppercase tracking-wider text-blue-300 font-semibold leading-none">
+            <span className="text-[10px] uppercase tracking-wider text-amber-200 font-semibold leading-none">
               Now Playing
             </span>
             <span className="text-xs font-medium text-white truncate max-w-[130px]">
-              {isPlaying ? "Canon In D (Piano)" : "Music Paused"}
+              {isPlaying ? "Dear Biyenan" : "Music Paused"}
             </span>
           </div>
 
@@ -105,20 +98,37 @@ export const MusicPlayer: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute bottom-14 left-0 w-64 p-4 rounded-2xl bg-[#0e1d2f]/95 text-white backdrop-blur-xl border border-blue-400/40 shadow-2xl"
+            className="absolute bottom-14 left-0 w-72 p-4 rounded-2xl bg-[#0e1d2f]/95 text-white backdrop-blur-xl border border-blue-400/40 shadow-2xl"
           >
-            <div className="flex items-center gap-2 mb-2">
-              <Music className="w-4 h-4 text-amber-300" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-blue-200">
-                Romantic Wedding Soundtrack
-              </span>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5">
+                <Music className="w-4 h-4 text-amber-300" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-200">
+                  Official Wedding Song
+                </span>
+              </div>
+              <a
+                href="https://www.youtube.com/watch?v=5e_KM3SuBjE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-amber-300 hover:text-amber-200 flex items-center gap-1"
+                title="Open on YouTube"
+              >
+                <span>YouTube</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
-            <p className="text-sm font-serif-title font-medium text-white mb-1">
-              Canon in D Serenade
+
+            <p className="text-sm font-serif-title font-bold text-white mb-0.5">
+              Dear Biyenan
+            </p>
+            <p className="text-[11px] text-amber-200/90 font-medium mb-1">
+              Breezy Boys &bull; JE Beats
             </p>
             <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
-              Curated romantic piano acoustic arpeggios honoring Aian &amp; Dang.
+              Special wedding soundtrack dedicated to Aian &amp; Dang&apos;s holy matrimony.
             </p>
+
             <div className="flex items-center justify-between pt-2 border-t border-blue-800/60">
               <button
                 onClick={togglePlayback}
