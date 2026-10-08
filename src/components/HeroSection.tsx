@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Calendar, Heart, MapPin, Check, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, ChevronDown } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
 
 export const HeroSection: React.FC = () => {
@@ -13,8 +13,6 @@ export const HeroSection: React.FC = () => {
     minutes: number;
     seconds: number;
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-  const [calendarAdded, setCalendarAdded] = useState(false);
 
   useEffect(() => {
     const targetDate = new Date("2026-12-12T15:00:00+08:00").getTime();
@@ -40,44 +38,6 @@ export const HeroSection: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAddToCalendar = () => {
-    const icsContent = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Aian and Dang Wedding//EN",
-      "CALSCALE:GREGORIAN",
-      "BEGIN:VEVENT",
-      "SUMMARY:Wedding of Aian & Dang",
-      "DESCRIPTION:Holy Matrimony and Wedding Celebration of Aian Christopher & Ma. Andrea (Dang). Dress Code: Shades of Blue & Slate.",
-      "LOCATION:St. Mary's Coastal Cathedral & The Sapphire Ballroom, Tagaytay",
-      "DTSTART:20261212T070000Z",
-      "DTEND:20261212T150000Z",
-      "STATUS:CONFIRMED",
-      "END:VEVENT",
-      "END:VCALENDAR",
-    ].join("\r\n");
-
-    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "Aian-and-Dang-Wedding.ics");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      "Wedding of Aian & Dang"
-    )}&dates=20261212T150000/20261212T230000&details=${encodeURIComponent(
-      "Holy Matrimony and Reception of Aian Christopher & Ma. Andrea (Dang). #AianGotHisDangGirl"
-    )}&location=${encodeURIComponent("St. Mary's Coastal Cathedral, Tagaytay")}`;
-
-    window.open(googleCalUrl, "_blank");
-
-    setCalendarAdded(true);
-    setTimeout(() => setCalendarAdded(false), 4000);
-  };
-
   return (
     <section id="hero" className="relative min-h-screen flex flex-col items-center justify-start pt-6 sm:pt-8 md:pt-10 pb-10 px-4 overflow-hidden">
       {/* Looping Hero Video Background */}
@@ -88,11 +48,11 @@ export const HeroSection: React.FC = () => {
           muted
           playsInline
           poster="/images/hero.jpg"
-          className="w-full h-full object-cover object-center scale-105"
+          className="w-full h-full object-cover object-center"
         >
           <source src="/hero-video.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0e1d2f]/85 via-[#1b3b5f]/50 to-[#fafbfc]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0e1d2f]/75 via-[#0e1d2f]/45 to-[#0e1d2f]/80" />
       </div>
 
       {/* Main Content */}
@@ -205,39 +165,6 @@ export const HeroSection: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* CTA Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mb-5 sm:mb-6"
-          >
-            <a
-              href="#rsvp"
-              className="w-full sm:w-auto px-7 py-3 rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 font-bold text-xs sm:text-sm uppercase tracking-wider shadow-xl hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-2"
-            >
-              <Heart className="w-4 h-4 fill-slate-950" />
-              <span>RSVP Your Attendance</span>
-            </a>
-
-            <button
-              onClick={handleAddToCalendar}
-              className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/50 text-white font-semibold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-            >
-              {calendarAdded ? (
-                <>
-                  <Check className="w-4 h-4 text-emerald-300" />
-                  <span>Calendar Saved!</span>
-                </>
-              ) : (
-                <>
-                  <Calendar className="w-4 h-4 text-amber-200" />
-                  <span>Add To Calendar</span>
-                </>
-              )}
-            </button>
-          </motion.div>
-
           {/* Scripture */}
           <div className="pt-3 border-t border-white/20 max-w-md mx-auto">
             <p className="font-serif-title italic text-xs sm:text-sm text-slate-200 leading-relaxed">
@@ -252,7 +179,7 @@ export const HeroSection: React.FC = () => {
           <motion.div
             animate={{ y: [0, 5, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="mt-4 text-white/60 hover:text-white transition-colors flex flex-col items-center gap-1 cursor-pointer"
+            className="mt-5 text-white/70 hover:text-white transition-colors flex flex-col items-center gap-1 cursor-pointer"
             onClick={() => {
               const el = document.querySelector("#details");
               if (el) el.scrollIntoView({ behavior: "smooth" });

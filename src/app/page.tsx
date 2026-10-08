@@ -7,7 +7,6 @@ import { HeroSection } from "@/components/HeroSection";
 import { WeddingDetailsSection } from "@/components/WeddingDetailsSection";
 import { EntourageSection } from "@/components/EntourageSection";
 import { DressCodeSection } from "@/components/DressCodeSection";
-import { PhotoGallerySection } from "@/components/PhotoGallerySection";
 import { RsvpSection } from "@/components/RsvpSection";
 import { WishesGuestbookSection } from "@/components/WishesGuestbookSection";
 import { WeddingTimelineSection } from "@/components/WeddingTimelineSection";
@@ -39,19 +38,16 @@ export default function Home() {
       {/* 6. Dress Code & Sample Dresses Lookbook */}
       <DressCodeSection />
 
-      {/* 7. Prenup Photo Gallery & Lightbox */}
-      <PhotoGallerySection />
-
-      {/* 8. Interactive RSVP Form with Accompanied Member Toggles */}
+      {/* 7. Interactive RSVP Form with Accompanied Member Toggles */}
       <RsvpSection />
 
-      {/* 9. Live Wishes & Guestbook Wall */}
+      {/* 8. Live Wishes & Guestbook Wall */}
       <WishesGuestbookSection />
 
-      {/* 10. Day of Wedding Timeline (at last before footer) */}
+      {/* 9. Day of Wedding Timeline (at last before footer) */}
       <WeddingTimelineSection />
 
-      {/* 11. Footer with Couple Monogram & Admin Portal Link */}
+      {/* 10. Footer with Couple Monogram & Admin Portal Link */}
       <Footer onReopenEnvelope={() => setIsEnvelopeOpen(false)} />
     </main>
   );
