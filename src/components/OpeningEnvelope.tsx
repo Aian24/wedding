@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, MailOpen, Mail } from "lucide-react";
+import Image from "next/image";
 import confetti from "canvas-confetti";
 import { weddingAudio } from "@/lib/soundSynthesizer";
 
@@ -12,8 +12,8 @@ interface OpeningEnvelopeProps {
 }
 
 export const OpeningEnvelope: React.FC<OpeningEnvelopeProps> = ({ onOpen, isOpen }) => {
-  const [guestName, setGuestName] = useState<string>("Special Guest & Family");
-  const [isOpeningAnim, setIsOpeningAnim] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  const [guestName, setGuestName] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -26,12 +26,21 @@ export const OpeningEnvelope: React.FC<OpeningEnvelopeProps> = ({ onOpen, isOpen
   }, []);
 
   const handleOpenInvitation = () => {
-    setIsOpeningAnim(true);
+    if (isOpening) return;
+    setIsOpening(true);
 
+    // 1. Play Canon in D Serenade
+    try {
+      weddingAudio.play();
+    } catch {
+      // ignore
+    }
+
+    // 2. Confetti blast
     try {
       confetti({
-        particleCount: 70,
-        spread: 70,
+        particleCount: 110,
+        spread: 90,
         origin: { y: 0.6 },
         colors: ["#7094b7", "#ffffff", "#dfc28d", "#a3c1dd", "#1b3b5f"],
       });
@@ -39,15 +48,10 @@ export const OpeningEnvelope: React.FC<OpeningEnvelopeProps> = ({ onOpen, isOpen
       // ignore
     }
 
-    try {
-      weddingAudio.play();
-    } catch {
-      // ignore
-    }
-
+    // 3. Smooth transition to main invitation
     setTimeout(() => {
       onOpen();
-    }, 1000);
+    }, 900);
   };
 
   if (isOpen) return null;
@@ -55,101 +59,97 @@ export const OpeningEnvelope: React.FC<OpeningEnvelopeProps> = ({ onOpen, isOpen
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0, scale: 1.05, transition: { duration: 0.8, ease: "easeInOut" } }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-[#0e1d2f]/95 p-4 backdrop-blur-xl overflow-hidden"
+        initial={{ opacity: 1 }}
+        exit={{
+          opacity: 0,
+          scale: 1.06,
+          transition: { duration: 0.8, ease: "easeInOut" },
+        }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-[#f7f5f0] p-4 sm:p-6 overflow-hidden select-none"
       >
-        {/* Soft background ambient glow */}
-        <div className="absolute inset-0 pointer-events-none opacity-25">
-          <div className="absolute top-1/4 left-1/4 w-80 h-80 rounded-full bg-blue-400/20 blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-amber-200/15 blur-3xl animate-pulse" />
-        </div>
+        {/* Subtle Ambient Paper Glow */}
+        <div className="absolute inset-0 bg-radial from-white via-[#f7f5f0] to-[#e7e3d9] pointer-events-none" />
 
-        {/* Envelope Box */}
-        <div className="relative w-full max-w-lg mx-auto">
-          <motion.div
-            initial={{ y: 25, opacity: 0, scale: 0.96 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="relative bg-gradient-to-b from-[#fbfdff] via-[#f2f7fc] to-[#e6eff8] rounded-3xl p-6 sm:p-10 shadow-2xl border border-white/60 text-center overflow-hidden"
-            style={{
-              boxShadow: "0 25px 60px -15px rgba(14, 29, 47, 0.4), 0 0 0 1px rgba(255,255,255,0.8) inset",
-            }}
-          >
-            {/* Top decorative stripe */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-300 via-amber-200 to-blue-400" />
+        {/* Envelope Presentation Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          animate={
+            isOpening
+              ? { scale: 1.04, opacity: 0.95 }
+              : { opacity: 1, scale: 1, y: 0 }
+          }
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          onClick={handleOpenInvitation}
+          className="relative w-full max-w-[460px] bg-[#fbf9f5] rounded-3xl sm:rounded-[36px] p-6 sm:p-8 shadow-[0_25px_70px_rgba(27,59,95,0.18),0_10px_25px_rgba(0,0,0,0.06)] border border-[#e8e2d5] cursor-pointer flex flex-col items-center justify-between aspect-[3/4.2] overflow-hidden group transition-all duration-300 hover:shadow-[0_30px_90px_rgba(27,59,95,0.25)]"
+        >
+          {/* Top Names & Date Header */}
+          <div className="text-center pt-2 sm:pt-4 z-20">
+            <h1 className="font-script text-4xl sm:text-5xl lg:text-6xl text-[#1b3b5f] tracking-wide leading-tight drop-shadow-xs">
+              Aian &bull; Dang
+            </h1>
+            <p className="font-editorial text-sm sm:text-base font-semibold tracking-[0.25em] text-[#53779d] mt-1 sm:mt-1.5 uppercase">
+              12.12.26
+            </p>
 
-            {/* Monogram */}
-            <div className="mx-auto mb-4 flex items-center justify-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#1b3b5f] to-[#3a6088] text-white flex items-center justify-center shadow-lg border-2 border-amber-200/80">
-                <span className="font-serif-title text-xl sm:text-2xl font-bold tracking-widest text-amber-100">
-                  A &amp; D
-                </span>
+            {guestName && (
+              <div className="mt-2 inline-block px-3.5 py-0.5 rounded-full bg-blue-50/80 border border-blue-200/60 text-[11px] text-[#1b3b5f] font-serif-title tracking-wider">
+                Prepared for <span className="font-bold">{guestName}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Center Realistic Envelope with Botanical Flowers */}
+          <div className="relative w-full flex-1 my-2 flex items-center justify-center">
+            <div className="relative w-[92%] sm:w-[96%] aspect-[4/3] rounded-2xl overflow-hidden shadow-md group-hover:scale-[1.02] transition-transform duration-500">
+              <Image
+                src="/images/envelope-cover.jpg"
+                alt="Aian & Dang Wedding Invitation Envelope"
+                fill
+                priority
+                sizes="(max-width: 640px) 90vw, 450px"
+                className="object-cover object-center rounded-2xl"
+              />
+
+              {/* Official Botanical Monogram Wax Seal */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <motion.div
+                  animate={
+                    isOpening
+                      ? { scale: [1, 1.8, 0], opacity: [1, 0.8, 0] }
+                      : { scale: [1, 1.06, 1], opacity: [0.95, 1, 0.95] }
+                  }
+                  transition={{
+                    duration: isOpening ? 0.5 : 2.5,
+                    repeat: isOpening ? 0 : Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shadow-[0_4px_25px_rgba(27,59,95,0.4),0_0_15px_rgba(223,194,141,0.6)] border-2 border-amber-200/90 bg-white"
+                >
+                  <Image
+                    src="/images/wedding-logo.png"
+                    alt="Aian & Dang Seal"
+                    fill
+                    className="object-cover"
+                  />
+                </motion.div>
               </div>
             </div>
+          </div>
 
-            {/* Header */}
-            <p className="font-script text-2xl sm:text-3xl text-[#7094b7] mb-1">
-              You are cordially invited
+          {/* Bottom Call to Action */}
+          <div className="text-center pb-2 sm:pb-3 z-20 flex flex-col items-center">
+            <motion.p
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              className="font-editorial text-xs sm:text-sm font-bold tracking-[0.3em] uppercase text-[#1b3b5f] drop-shadow-xs"
+            >
+              CLICK TO OPEN
+            </motion.p>
+            <p className="font-script text-2xl sm:text-3xl lg:text-4xl text-[#53779d] -mt-1 sm:-mt-0.5 tracking-wide">
+              The Magic...
             </p>
-            <h1 className="font-serif-title text-2xl sm:text-3xl font-bold tracking-wider text-[#0e1d2f] uppercase">
-              Aian &amp; Dang
-            </h1>
-            <div className="flex items-center justify-center gap-2 my-2 text-xs uppercase tracking-[0.25em] text-[#7094b7]">
-              <span>Together with their families</span>
-            </div>
-
-            {/* Recipient Ribbon Card */}
-            <div className="my-6 p-4 rounded-2xl bg-white/90 border border-blue-100 shadow-sm backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-1">
-                Specially Prepared For
-              </p>
-              <p className="font-serif-title text-lg sm:text-xl font-bold text-[#1b3b5f]">
-                {guestName}
-              </p>
-            </div>
-
-            {/* Date Details */}
-            <div className="flex items-center justify-center gap-3 text-xs sm:text-sm text-slate-600 mb-8">
-              <span>Saturday</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <span className="font-semibold text-[#1b3b5f]">December 12, 2026</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              <span>Tagaytay</span>
-            </div>
-
-            {/* Open Button */}
-            <div className="relative flex flex-col items-center justify-center">
-              <motion.button
-                id="open-invitation-btn"
-                onClick={handleOpenInvitation}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                animate={
-                  isOpeningAnim
-                    ? { rotate: 360, scale: 0.8, opacity: 0 }
-                    : { y: [0, -3, 0] }
-                }
-                transition={{
-                  y: { repeat: Infinity, duration: 2.2, ease: "easeInOut" },
-                }}
-                className="group relative cursor-pointer px-8 py-4 rounded-full bg-gradient-to-r from-[#1b3b5f] via-[#2d5682] to-[#1b3b5f] text-white font-semibold text-sm sm:text-base tracking-wider uppercase shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 border border-amber-200/50"
-              >
-                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-slate-900 flex items-center justify-center text-xs font-bold shadow-inner">
-                  AD
-                </span>
-                <span>Open Digital Invitation</span>
-                <MailOpen className="w-5 h-5 text-amber-200 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-
-              <p className="mt-3 text-[11px] tracking-wider text-slate-500 flex items-center gap-1">
-                <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
-                Tap to unlock the celebration details &amp; music
-              </p>
-            </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </motion.div>
     </AnimatePresence>
   );

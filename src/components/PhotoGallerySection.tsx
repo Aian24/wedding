@@ -78,8 +78,26 @@ export const PhotoGallerySection: React.FC = () => {
   };
 
   return (
-    <section id="gallery" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative">
-      <div className="max-w-6xl mx-auto">
+    <section id="gallery" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
+      {/* Corner Botanical Floral Accents */}
+      <div className="absolute top-0 -right-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0">
+        <Image
+          src="/images/floral-corner.jpg"
+          alt=""
+          fill
+          className="object-contain"
+        />
+      </div>
+      <div className="absolute bottom-0 -left-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0 rotate-180">
+        <Image
+          src="/images/floral-corner.jpg"
+          alt=""
+          fill
+          className="object-contain"
+        />
+      </div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -88,6 +106,15 @@ export const PhotoGallerySection: React.FC = () => {
           transition={{ duration: 0.6 }}
           className="text-center max-w-2xl mx-auto mb-14"
         >
+          {/* Floral Header Banner */}
+          <div className="relative w-36 sm:w-48 h-12 sm:h-16 mx-auto mb-2 opacity-85">
+            <Image
+              src="/images/floral-divider.jpg"
+              alt="Dusty Blue Floral Header"
+              fill
+              className="object-contain mix-blend-multiply"
+            />
+          </div>
           <div className="inline-flex items-center justify-center gap-2 mb-2">
             <span className="h-px w-8 bg-[#7094b7]" />
             <span className="font-script text-2xl sm:text-3xl text-[#7094b7]">Captured Moments</span>

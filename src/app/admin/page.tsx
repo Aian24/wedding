@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ShieldCheck,
   Lock,
@@ -315,8 +316,13 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0e1d2f] via-[#1b3b5f] to-[#0e1d2f] flex items-center justify-center p-4">
         <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-2xl border border-amber-200/50 text-center">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#1b3b5f] to-[#366088] text-amber-200 border border-amber-200/60 flex items-center justify-center mx-auto mb-4 shadow-md font-serif-title font-bold text-xl">
-            A&amp;D
+          <div className="relative w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 shadow-lg border-2 border-amber-200/80 bg-white">
+            <Image
+              src="/images/wedding-logo.png"
+              alt="Aian & Dang Logo"
+              fill
+              className="object-cover"
+            />
           </div>
 
           <h1 className="font-serif-title text-2xl sm:text-3xl font-bold text-[#1b3b5f] uppercase mb-1">
@@ -426,8 +432,13 @@ export default function AdminPage() {
           {/* Sidebar Header Brand */}
           <div className="p-6 border-b border-blue-900/60 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#1b3b5f] to-[#3a628c] text-amber-200 border border-amber-200/50 flex items-center justify-center font-serif-title font-bold text-sm shadow-md">
-                A&amp;D
+              <div className="relative w-11 h-11 rounded-full overflow-hidden border border-amber-200/50 shadow-md bg-white shrink-0">
+                <Image
+                  src="/images/wedding-logo.png"
+                  alt="Aian & Dang Logo"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div>
                 <h2 className="font-serif-title text-sm sm:text-base font-bold text-white uppercase tracking-wider leading-tight whitespace-nowrap">

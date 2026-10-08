@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { OpeningEnvelope } from "@/components/OpeningEnvelope";
-import { Navbar } from "@/components/Navbar";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { HeroSection } from "@/components/HeroSection";
 import { WeddingDetailsSection } from "@/components/WeddingDetailsSection";
@@ -27,10 +26,7 @@ export default function Home() {
       {/* 2. Floating Romantic Music Player */}
       <MusicPlayer />
 
-      {/* 3. High-Contrast Sticky Navigation Bar */}
-      <Navbar onReopenEnvelope={() => setIsEnvelopeOpen(false)} />
-
-      {/* 4. Hero Section with Live Countdown & Scroll Cue */}
+      {/* 3. Hero Section with Live Countdown & Scroll Cue */}
       <HeroSection />
 
       {/* 5. Wedding Events & Venues (Ceremony & Reception) */}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Heart, Mail, ShieldCheck } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
 
@@ -16,10 +17,13 @@ export const Footer: React.FC<FooterProps> = ({ onReopenEnvelope }) => {
       </div>
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#1b3b5f] to-[#3a628c] text-amber-200 border-2 border-amber-200/50 flex items-center justify-center mx-auto mb-6 shadow-xl">
-          <span className="font-serif-title font-bold text-xl tracking-widest">
-            A&amp;D
-          </span>
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-6 shadow-2xl border-2 border-amber-200/80 ring-4 ring-white/10 bg-white">
+          <Image
+            src="/images/wedding-logo.png"
+            alt="Aian & Dang Monogram Crest"
+            fill
+            className="object-cover"
+          />
         </div>
 
         <p className="font-script text-3xl sm:text-4xl text-amber-200 mb-2">
