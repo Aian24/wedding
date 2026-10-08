@@ -25,7 +25,7 @@ import {
   Printer,
   Heart,
   Crown,
-  Gift,
+  Palette,
   MessageSquare,
   LayoutDashboard,
   UserCheck,
@@ -33,15 +33,20 @@ import {
   X,
   Calendar,
   ExternalLink,
+  Sparkles,
+  Check,
 } from "lucide-react";
 import {
   weddingStore,
   RsvpEntry,
   EntourageCategory,
   EntourageMember,
-  RegistryItem,
+  InvitedParty,
+  PartyMember,
+  ThemeColor,
   GuestbookEntry,
 } from "@/lib/weddingStore";
+import { weddingData } from "@/data/weddingData";
 
 export default function AdminPage() {
   // Authentication State
@@ -54,14 +59,19 @@ export default function AdminPage() {
   // Sidebar navigation state
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<
-    "dashboard" | "rsvps" | "entourage" | "wishes"
+    "dashboard" | "rsvps" | "parties" | "palette" | "entourage" | "wishes"
   >("dashboard");
 
   // Store data states
   const [rsvps, setRsvps] = useState<RsvpEntry[]>([]);
+  const [parties, setParties] = useState<InvitedParty[]>([]);
+  const [colors, setColors] = useState<ThemeColor[]>([]);
   const [entourage, setEntourage] = useState<EntourageCategory[]>([]);
-  const [registry, setRegistry] = useState<RegistryItem[]>([]);
   const [wishes, setWishes] = useState<GuestbookEntry[]>([]);
+
+  // Theme text info
+  const [themeTitle, setThemeTitle] = useState(weddingData.theme.name);
+  const [themeDesc, setThemeDesc] = useState(weddingData.theme.description);
 
   // DataTable States for RSVPs
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -71,16 +81,31 @@ export default function AdminPage() {
   const [sortField, setSortField] = useState<keyof RsvpEntry>("submittedAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
+  // Party Search State
+  const [partySearch, setPartySearch] = useState("");
+
   // Modals
+  const [isAddPartyOpen, setIsAddPartyOpen] = useState<boolean>(false);
+  const [editingParty, setEditingParty] = useState<InvitedParty | null>(null);
+
+  const [isAddColorOpen, setIsAddColorOpen] = useState<boolean>(false);
+  const [editingColor, setEditingColor] = useState<ThemeColor | null>(null);
+  const [newColorName, setNewColorName] = useState("");
+  const [newColorHex, setNewColorHex] = useState("#7B9EBD");
+  const [newColorDesc, setNewColorDesc] = useState("");
+
   const [isAddRsvpOpen, setIsAddRsvpOpen] = useState<boolean>(false);
   const [editingRsvp, setEditingRsvp] = useState<RsvpEntry | null>(null);
   const [selectedRsvpView, setSelectedRsvpView] = useState<RsvpEntry | null>(null);
 
-  // Entourage Edit State
-  const [editingCategoryIdx, setEditingCategoryIdx] = useState<number | null>(null);
-  const [newMemberRole, setNewMemberRole] = useState<string>("");
-  const [newMemberName, setNewMemberName] = useState<string>("");
-  const [editingMember, setEditingMember] = useState<{ catIdx: number; member: EntourageMember } | null>(null);
+  // Party modal form state
+  const [partyFormName, setPartyFormName] = useState("");
+  const [partyFormPrimary, setPartyFormPrimary] = useState("");
+  const [partyFormEmail, setPartyFormEmail] = useState("");
+  const [partyFormPhone, setPartyFormPhone] = useState("");
+  const [partyFormTable, setPartyFormTable] = useState("");
+  const [partyFormNotes, setPartyFormNotes] = useState("");
+  const [partyFormMembers, setPartyFormMembers] = useState<{ id: string; name: string; role: string; isAttending: boolean }[]>([]);
 
   // Check auth on mount
   useEffect(() => {
@@ -92,8 +117,9 @@ export default function AdminPage() {
 
   const loadAllData = () => {
     setRsvps(weddingStore.getRsvps());
+    setParties(weddingStore.getParties());
+    setColors(weddingStore.getThemeColors());
     setEntourage(weddingStore.getEntourage());
-    setRegistry(weddingStore.getRegistry());
 
     if (typeof window !== "undefined") {
       const savedWishes = localStorage.getItem("aian_dang_wedding_guestbook");
@@ -140,105 +166,187 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveEditRsvp = (e: React.FormEvent) => {
+  // Party Actions
+  const handleOpenAddParty = () => {
+    setEditingParty(null);
+    setPartyFormName("");
+    setPartyFormPrimary("");
+    setPartyFormEmail("");
+    setPartyFormPhone("");
+    setPartyFormTable("VIP Table 1");
+    setPartyFormNotes("");
+    setPartyFormMembers([
+      { id: "m-" + Date.now(), name: "", role: "Primary Guest", isAttending: true },
+    ]);
+    setIsAddPartyOpen(true);
+  };
+
+  const handleOpenEditParty = (party: InvitedParty) => {
+    setEditingParty(party);
+    setPartyFormName(party.partyName);
+    setPartyFormPrimary(party.primaryGuest);
+    setPartyFormEmail(party.email || "");
+    setPartyFormPhone(party.phone || "");
+    setPartyFormTable(party.tableNumber || "");
+    setPartyFormNotes(party.notes || "");
+    setPartyFormMembers(
+      party.members.map((m) => ({
+        id: m.id,
+        name: m.name,
+        role: m.role || "Guest",
+        isAttending: m.isAttending !== false,
+      }))
+    );
+    setIsAddPartyOpen(true);
+  };
+
+  const handleAddMemberToPartyForm = () => {
+    setPartyFormMembers([
+      ...partyFormMembers,
+      { id: "m-" + Date.now(), name: "", role: "Plus One / Guest", isAttending: true },
+    ]);
+  };
+
+  const handleRemoveMemberFromPartyForm = (id: string) => {
+    if (partyFormMembers.length <= 1) return;
+    setPartyFormMembers(partyFormMembers.filter((m) => m.id !== id));
+  };
+
+  const handleSaveParty = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingRsvp) return;
-    weddingStore.updateRsvp(editingRsvp.id, editingRsvp);
-    setEditingRsvp(null);
+    if (!partyFormPrimary.trim() || !partyFormName.trim()) return;
+
+    const cleanMembers = partyFormMembers.filter((m) => m.name.trim().length > 0);
+    if (cleanMembers.length === 0) {
+      cleanMembers.push({ id: "m-1", name: partyFormPrimary.trim(), role: "Primary Guest", isAttending: true });
+    }
+
+    if (editingParty) {
+      weddingStore.updateParty(editingParty.id, {
+        partyName: partyFormName.trim(),
+        primaryGuest: partyFormPrimary.trim(),
+        email: partyFormEmail.trim(),
+        phone: partyFormPhone.trim(),
+        maxSeats: cleanMembers.length,
+        tableNumber: partyFormTable.trim(),
+        notes: partyFormNotes.trim(),
+        members: cleanMembers,
+      });
+    } else {
+      weddingStore.addParty({
+        partyName: partyFormName.trim(),
+        primaryGuest: partyFormPrimary.trim(),
+        email: partyFormEmail.trim(),
+        phone: partyFormPhone.trim(),
+        maxSeats: cleanMembers.length,
+        tableNumber: partyFormTable.trim(),
+        notes: partyFormNotes.trim(),
+        members: cleanMembers,
+      });
+    }
+
+    setIsAddPartyOpen(false);
     loadAllData();
   };
 
-  const handleCreateManualRsvp = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form);
+  const handleDeleteParty = (id: string, name: string) => {
+    if (window.confirm(`Delete party "${name}"?`)) {
+      weddingStore.deleteParty(id);
+      loadAllData();
+    }
+  };
 
-    weddingStore.addRsvp({
-      fullName: (formData.get("fullName") as string) || "Guest",
-      email: (formData.get("email") as string) || "offline@guest.com",
-      phone: (formData.get("phone") as string) || "N/A",
-      status: (formData.get("status") as "attending" | "declined") || "attending",
-      guestCount: parseInt((formData.get("guestCount") as string) || "1", 10),
-      companionNames: (formData.get("companionNames") as string) || "",
-      message: (formData.get("message") as string) || "Manual RSVP entered by couple/admin.",
-      tableNumber: (formData.get("tableNumber") as string) || "Unassigned",
+  // Color Palette Actions
+  const handleOpenAddColor = () => {
+    setEditingColor(null);
+    setNewColorName("");
+    setNewColorHex("#7B9EBD");
+    setNewColorDesc("");
+    setIsAddColorOpen(true);
+  };
+
+  const handleOpenEditColor = (color: ThemeColor) => {
+    setEditingColor(color);
+    setNewColorName(color.name);
+    setNewColorHex(color.hex);
+    setNewColorDesc(color.desc);
+    setIsAddColorOpen(true);
+  };
+
+  const handleSaveColor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newColorName.trim() || !newColorHex.trim()) return;
+
+    if (editingColor) {
+      weddingStore.updateThemeColor(editingColor.id, {
+        name: newColorName.trim(),
+        hex: newColorHex.trim(),
+        desc: newColorDesc.trim(),
+      });
+    } else {
+      weddingStore.addThemeColor({
+        name: newColorName.trim(),
+        hex: newColorHex.trim(),
+        desc: newColorDesc.trim(),
+      });
+    }
+
+    setIsAddColorOpen(false);
+    loadAllData();
+  };
+
+  const handleDeleteColor = (id: string, name: string) => {
+    if (window.confirm(`Delete swatch "${name}"?`)) {
+      weddingStore.deleteThemeColor(id);
+      loadAllData();
+    }
+  };
+
+  // Entourage member actions
+  const handleAddEntourageMember = (catIdx: number, role: string, name: string) => {
+    if (!role.trim() || !name.trim()) return;
+    const current = [...entourage];
+    current[catIdx].members.push({
+      id: "m-" + Date.now(),
+      role: role.trim(),
+      name: name.trim(),
     });
-
-    setIsAddRsvpOpen(false);
+    weddingStore.saveEntourage(current);
     loadAllData();
-  };
-
-  // Entourage Actions
-  const handleAddMemberToCategory = (catIdx: number) => {
-    if (!newMemberRole.trim() || !newMemberName.trim()) return;
-
-    const updated = [...entourage];
-    const newMember: EntourageMember = {
-      id: `m-${Date.now()}`,
-      role: newMemberRole.trim(),
-      name: newMemberName.trim(),
-    };
-    updated[catIdx].members.push(newMember);
-    weddingStore.saveEntourage(updated);
-    setEntourage(updated);
-    setNewMemberRole("");
-    setNewMemberName("");
-    setEditingCategoryIdx(null);
   };
 
   const handleDeleteEntourageMember = (catIdx: number, memberId: string) => {
-    const updated = [...entourage];
-    updated[catIdx].members = updated[catIdx].members.filter((m) => m.id !== memberId);
-    weddingStore.saveEntourage(updated);
-    setEntourage(updated);
+    const current = [...entourage];
+    current[catIdx].members = current[catIdx].members.filter((m) => m.id !== memberId);
+    weddingStore.saveEntourage(current);
+    loadAllData();
   };
 
-  const handleUpdateEntourageMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingMember) return;
-    const updated = [...entourage];
-    const memberIdx = updated[editingMember.catIdx].members.findIndex(
-      (m) => m.id === editingMember.member.id
-    );
-    if (memberIdx !== -1) {
-      updated[editingMember.catIdx].members[memberIdx] = editingMember.member;
-      weddingStore.saveEntourage(updated);
-      setEntourage(updated);
-    }
-    setEditingMember(null);
-  };
-
-  // Wishes moderation
-  const handleDeleteWish = (id: string) => {
-    const updated = wishes.filter((w) => w.id !== id);
-    setWishes(updated);
-    localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(updated));
-  };
-
-  // Filtered & Paginated RSVPs
+  // Filtered and Sorted RSVPs
   const filteredRsvps = useMemo(() => {
     return rsvps.filter((r) => {
       const matchSearch =
         r.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.companionNames && r.companionNames.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const matchStatus =
-        statusFilter === "all" ? true : r.status === statusFilter;
-
+        r.companionNames.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = statusFilter === "all" || r.status === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [rsvps, searchTerm, statusFilter]);
 
   const sortedRsvps = useMemo(() => {
     return [...filteredRsvps].sort((a, b) => {
-      let aVal: any = a[sortField] || "";
-      let bVal: any = b[sortField] || "";
+      let aVal: string | number = "";
+      let bVal: string | number = "";
 
       if (sortField === "guestCount") {
         aVal = a.guestCount || 1;
         bVal = b.guestCount || 1;
+      } else {
+        const aRaw = a[sortField];
+        const bRaw = b[sortField];
+        aVal = typeof aRaw === "string" || typeof aRaw === "number" ? aRaw : "";
+        bVal = typeof bRaw === "string" || typeof bRaw === "number" ? bRaw : "";
       }
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -261,10 +369,8 @@ export default function AdminPage() {
   const targetCapacity = 180;
   const capacityPercent = Math.min(100, Math.round((totalHeadcount / targetCapacity) * 100));
 
-  // Entourage total count
-  const totalEntourageCount = useMemo(() => {
-    return entourage.reduce((acc, cat) => acc + cat.members.length, 0);
-  }, [entourage]);
+  const totalInvitedPartiesCount = parties.length;
+  const totalInvitedSeatsCount = parties.reduce((acc, curr) => acc + curr.maxSeats, 0);
 
   // Export CSV
   const exportToCsv = () => {
@@ -307,10 +413,6 @@ export default function AdminPage() {
     document.body.removeChild(link);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   /* ----------------- LOGIN VIEW ----------------- */
   if (!isAuthenticated) {
     return (
@@ -329,7 +431,7 @@ export default function AdminPage() {
             Couple &amp; Admin Portal
           </h1>
           <p className="text-xs text-slate-500 font-light mb-6">
-            Aian &amp; Dang Wedding Reservation &amp; Entourage Manager
+            Aian &amp; Dang Wedding Management Suite
           </p>
 
           {authError && (
@@ -351,7 +453,7 @@ export default function AdminPage() {
                   placeholder="admin"
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-[#1b3b5f] focus:outline-none bg-slate-50/50"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:border-[#1b3b5f] focus:outline-none"
                 />
               </div>
             </div>
@@ -365,23 +467,23 @@ export default function AdminPage() {
                 <input
                   type="password"
                   required
-                  placeholder="••••••••••••"
+                  placeholder="Password"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-[#1b3b5f] focus:outline-none bg-slate-50/50"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:border-[#1b3b5f] focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
+            <div className="flex items-center justify-between text-xs">
               <label className="flex items-center gap-2 cursor-pointer text-slate-600">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded text-[#1b3b5f]"
+                  className="rounded border-slate-300 text-[#1b3b5f]"
                 />
-                <span>Remember session</span>
+                <span>Remember me</span>
               </label>
 
               <span className="text-[11px] text-slate-400">
@@ -452,33 +554,47 @@ export default function AdminPage() {
 
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+              className="lg:hidden text-slate-400 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Navigation Menu */}
-          <div className="p-4 space-y-1.5 flex-1">
-            <p className="px-3 py-2 text-[10px] uppercase font-bold tracking-[0.2em] text-blue-300/60">
-              Overview &amp; Planning
-            </p>
-
+          {/* Navigation Links */}
+          <nav className="p-4 space-y-1.5 flex-1">
             <button
               onClick={() => {
                 setActiveTab("dashboard");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
                 activeTab === "dashboard"
-                  ? "bg-gradient-to-r from-blue-600 to-[#1b3b5f] text-white shadow-md border border-blue-400/40"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Overview Analytics</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("parties");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
+                activeTab === "parties"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
               }`}
             >
               <div className="flex items-center gap-3">
-                <LayoutDashboard className="w-4 h-4 text-amber-300" />
-                <span>Dashboard Analytics</span>
+                <UserCheck className="w-4 h-4" />
+                <span>Master Guest List</span>
               </div>
+              <span className="px-2 py-0.5 rounded-full bg-blue-800 text-[10px] text-white">
+                {parties.length}
+              </span>
             </button>
 
             <button
@@ -486,18 +602,38 @@ export default function AdminPage() {
                 setActiveTab("rsvps");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
                 activeTab === "rsvps"
-                  ? "bg-gradient-to-r from-blue-600 to-[#1b3b5f] text-white shadow-md border border-blue-400/40"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Users className="w-4 h-4 text-amber-300" />
-                <span>Guest Reservations</span>
+                <Users className="w-4 h-4" />
+                <span>RSVP Responses</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/30 text-amber-200 text-[10px] font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-[10px] text-white">
                 {rsvps.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("palette");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
+                activeTab === "palette"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Palette className="w-4 h-4" />
+                <span>Dress &amp; Palette Colors</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-blue-800 text-[10px] text-white">
+                {colors.length}
               </span>
             </button>
 
@@ -506,18 +642,18 @@ export default function AdminPage() {
                 setActiveTab("entourage");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
                 activeTab === "entourage"
-                  ? "bg-gradient-to-r from-blue-600 to-[#1b3b5f] text-white shadow-md border border-blue-400/40"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Crown className="w-4 h-4 text-amber-300" />
-                <span>Entourage &amp; Sponsors</span>
+                <Crown className="w-4 h-4" />
+                <span>Entourage Roster</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/30 text-amber-200 text-[10px] font-bold">
-                {totalEntourageCount}
+              <span className="px-2 py-0.5 rounded-full bg-blue-800 text-[10px] text-white">
+                {entourage.reduce((a, c) => a + c.members.length, 0)}
               </span>
             </button>
 
@@ -526,684 +662,554 @@ export default function AdminPage() {
                 setActiveTab("wishes");
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
                 activeTab === "wishes"
-                  ? "bg-gradient-to-r from-blue-600 to-[#1b3b5f] text-white shadow-md border border-blue-400/40"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
               }`}
             >
               <div className="flex items-center gap-3">
-                <MessageSquare className="w-4 h-4 text-amber-300" />
-                <span>Wishes Guestbook</span>
+                <MessageSquare className="w-4 h-4" />
+                <span>Guestbook Wishes</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/30 text-amber-200 text-[10px] font-bold">
+              <span className="px-2 py-0.5 rounded-full bg-blue-800 text-[10px] text-white">
                 {wishes.length}
               </span>
             </button>
-          </div>
+          </nav>
 
-          {/* Sidebar Bottom Profile & Links */}
-          <div className="p-4 border-t border-blue-900/60 space-y-3">
+          {/* Sidebar Footer Actions */}
+          <div className="p-4 border-t border-blue-900/60 space-y-2">
             <Link
               href="/"
               target="_blank"
-              className="w-full py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-between transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-slate-200 transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <Eye className="w-3.5 h-3.5 text-blue-300" />
-                <span>View Public Site</span>
-              </div>
-              <ExternalLink className="w-3 h-3 text-slate-500" />
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Preview Live Invitation</span>
             </Link>
 
-            <div className="flex items-center justify-between pt-2 border-t border-blue-900/40">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-800/60 text-amber-200 flex items-center justify-center text-xs font-bold">
-                  AD
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white leading-none">admin</p>
-                  <p className="text-[10px] text-emerald-400 mt-0.5">Online &bull; Organizer</p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleLogout}
-                title="Logout"
-                className="p-2 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-medium transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Logout Session</span>
+            </button>
           </div>
         </div>
       </aside>
 
-      {/* ======================= RIGHT MAIN CONTENT ======================= */}
-      <div className="flex-1 lg:pl-64 xl:pl-72 flex flex-col min-w-0">
-        <header className="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+      {/* ======================= MAIN CONTENT AREA ======================= */}
+      <div className="flex-1 flex flex-col lg:pl-64 xl:pl-72 min-h-screen">
+        {/* Top App Bar */}
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xs">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100"
+              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="font-serif-title text-base sm:text-lg font-bold text-[#1b3b5f] capitalize">
-                {activeTab === "dashboard" && "Dashboard & Analytics Overview"}
-                {activeTab === "rsvps" && "Guest Reservations & Seating Table"}
-                {activeTab === "entourage" && "Entourage & Bridal Party Directory"}
-                {activeTab === "wishes" && "Guestbook Wishes Moderation"}
+              <h1 className="font-serif-title font-bold text-base sm:text-lg text-[#1b3b5f] capitalize">
+                {activeTab === "dashboard" && "Analytics Overview"}
+                {activeTab === "parties" && "Master Guest List (Invitation Parties)"}
+                {activeTab === "rsvps" && "RSVP Responses & Table Assignments"}
+                {activeTab === "palette" && "Wedding Theme & Dress Palette Colors"}
+                {activeTab === "entourage" && "Wedding Entourage Roster"}
+                {activeTab === "wishes" && "Guestbook Blessings & Messages"}
               </h1>
-              <p className="text-[10px] text-slate-400 font-medium">
-                Wedding Date: Saturday, December 12, 2026 &bull; Tagaytay
+              <p className="text-[10px] text-slate-400">
+                Saturday, December 12, 2026 &bull; Tagaytay Celebration
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setIsAddRsvpOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4 text-amber-300" />
-              <span>Add RSVP</span>
-            </button>
+          <div className="flex items-center gap-2.5">
+            {activeTab === "parties" && (
+              <button
+                onClick={handleOpenAddParty}
+                className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Party</span>
+              </button>
+            )}
 
-            <button
-              onClick={exportToCsv}
-              className="hidden sm:flex px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
+            {activeTab === "palette" && (
+              <button
+                onClick={handleOpenAddColor}
+                className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Palette Swatch</span>
+              </button>
+            )}
+
+            {activeTab === "rsvps" && (
+              <button
+                onClick={exportToCsv}
+                className="px-3.5 py-2 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </button>
+            )}
           </div>
         </header>
 
-        {/* Tab Content */}
-        <main className="p-4 sm:p-8 space-y-8 flex-1">
-          {/* ======================= TAB 1: DASHBOARD & ANALYTICS ======================= */}
+        {/* Dynamic Tab Body */}
+        <main className="p-4 sm:p-8 flex-1">
+          {/* 1. DASHBOARD TAB */}
           {activeTab === "dashboard" && (
-            <div className="space-y-8">
-              {/* KPI Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div className="bg-white rounded-2xl p-6 border border-blue-100 shadow-sm flex items-center justify-between">
+            <div className="space-y-6">
+              {/* KPI Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase font-bold tracking-wider text-slate-400">
-                      Confirmed Headcount
+                    <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                      Confirmed Attending
                     </p>
-                    <p className="font-serif-title text-3xl sm:text-4xl font-bold text-[#1b3b5f] mt-1">
-                      {totalHeadcount} <span className="text-xs font-normal text-slate-400">Seats</span>
-                    </p>
-                    <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                      {capacityPercent}% of {targetCapacity} venue target
-                    </p>
+                    <h3 className="font-serif-title text-2xl sm:text-3xl font-bold text-emerald-700 mt-0.5">
+                      {totalHeadcount} <span className="text-xs font-sans font-normal text-slate-500">Seats</span>
+                    </h3>
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1b3b5f] flex items-center justify-center">
-                    <Users className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                    <UserCheck className="w-6 h-6" />
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm flex items-center justify-between">
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase font-bold tracking-wider text-emerald-600">
-                      Attending RSVPs
+                    <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                      Declined
                     </p>
-                    <p className="font-serif-title text-3xl sm:text-4xl font-bold text-emerald-700 mt-1">
-                      {attendingRsvps.length}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Parties joyfully accepted
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-6 border border-rose-100 shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase font-bold tracking-wider text-rose-500">
-                      Regretfully Declined
-                    </p>
-                    <p className="font-serif-title text-3xl sm:text-4xl font-bold text-rose-600 mt-1">
+                    <h3 className="font-serif-title text-2xl sm:text-3xl font-bold text-slate-700 mt-0.5">
                       {declinedRsvps.length}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Unable to attend
-                    </p>
+                    </h3>
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
                     <XCircle className="w-6 h-6" />
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-blue-100 shadow-sm flex items-center justify-between">
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase font-bold tracking-wider text-[#7094b7]">
-                      Total RSVP Records
+                    <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                      Invited Parties
                     </p>
-                    <p className="font-serif-title text-3xl sm:text-4xl font-bold text-[#1b3b5f] mt-1">
-                      {totalRsvpCount}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      {totalEntourageCount} Entourage members
-                    </p>
+                    <h3 className="font-serif-title text-2xl sm:text-3xl font-bold text-[#1b3b5f] mt-0.5">
+                      {totalInvitedPartiesCount} <span className="text-xs font-sans font-normal text-slate-500">({totalInvitedSeatsCount} Max Seats)</span>
+                    </h3>
                   </div>
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#7094b7] flex items-center justify-center">
-                    <UserCheck className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1b3b5f] flex items-center justify-center font-bold">
+                    <Users className="w-6 h-6" />
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase font-bold tracking-wider text-slate-400">
+                      Venue Capacity
+                    </p>
+                    <h3 className="font-serif-title text-2xl sm:text-3xl font-bold text-[#1b3b5f] mt-0.5">
+                      {capacityPercent}% <span className="text-xs font-sans font-normal text-slate-500">/ {targetCapacity}</span>
+                    </h3>
+                  </div>
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                    <Crown className="w-6 h-6" />
                   </div>
                 </div>
               </div>
 
-              {/* Capacity Progress Bar */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-serif-title text-lg font-bold text-[#1b3b5f]">
-                      Venue Seating &amp; Capacity Meter
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Sapphire Grand Ballroom reserved headcount progress
-                    </p>
+              {/* Quick Jump Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div
+                  onClick={() => setActiveTab("parties")}
+                  className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs hover:border-[#1b3b5f] cursor-pointer transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#1b3b5f] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <UserCheck className="w-5 h-5" />
                   </div>
-                  <span className="font-serif-title font-bold text-lg text-[#1b3b5f]">
-                    {totalHeadcount} / {targetCapacity} Seats
+                  <h4 className="font-serif-title font-bold text-base text-[#1b3b5f]">
+                    Master Guest List &amp; Household Parties
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 font-light leading-relaxed">
+                    Add invited families, set accompanied member names, and view member attendance.
+                  </p>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab("palette")}
+                  className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs hover:border-[#1b3b5f] cursor-pointer transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Palette className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-serif-title font-bold text-base text-[#1b3b5f]">
+                    Theme Palette &amp; Dress Code Swatches
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 font-light leading-relaxed">
+                    Live edit color swatches, add new HEX colors, and customize guest attire rules.
+                  </p>
+                </div>
+
+                <div
+                  onClick={() => setActiveTab("rsvps")}
+                  className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs hover:border-[#1b3b5f] cursor-pointer transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-serif-title font-bold text-base text-[#1b3b5f]">
+                    RSVP Responses &amp; Table Allocations
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1 font-light leading-relaxed">
+                    Manage table seatings, export CSV spreadsheets, and filter confirmed guests.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 2. PARTIES TAB */}
+          {activeTab === "parties" && (
+            <div className="space-y-6">
+              <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search party name or guest..."
+                      value={partySearch}
+                      onChange={(e) => setPartySearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#1b3b5f]"
+                    />
+                  </div>
+
+                  <span className="text-xs text-slate-500">
+                    Showing <strong>{parties.length}</strong> Registered Parties
                   </span>
                 </div>
 
-                <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-500 via-[#1b3b5f] to-amber-400 rounded-full transition-all duration-1000"
-                    style={{ width: `${capacityPercent}%` }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                  <span>0 Seats</span>
-                  <span>{targetCapacity - totalHeadcount} Remaining Available Seats</span>
-                  <span>{targetCapacity} Max Target</span>
-                </div>
-              </div>
-
-              {/* Recent Messages & Overview Card */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-serif-title text-lg font-bold text-[#1b3b5f]">
-                      Recent Guest Wishes &amp; RSVP Messages
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Heartfelt notes sent by guests in their reservations
-                    </p>
-                  </div>
-                  <Heart className="w-5 h-5 text-rose-500" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rsvps
-                    .filter((r) => r.message && r.message.trim().length > 0)
-                    .slice(0, 6)
-                    .map((r) => (
-                      <div
-                        key={r.id}
-                        className="p-4 rounded-2xl bg-blue-50/40 border border-blue-100 flex flex-col justify-between text-xs"
-                      >
-                        <p className="text-slate-700 italic mb-3">&ldquo;{r.message}&rdquo;</p>
-                        <div className="pt-2 border-t border-blue-100/60 flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-[#1b3b5f]">{r.fullName}</span>
-                          <span className="text-slate-400">{r.submittedAt}</span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ======================= TAB 2: GUEST RESERVATIONS DATATABLE ======================= */}
-          {activeTab === "rsvps" && (
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden space-y-0">
-              <div className="p-6 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                  <h2 className="font-serif-title text-xl font-bold text-[#1b3b5f]">
-                    Guest Reservations &amp; Seating Table
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Manage confirmed attendees, companions, and seating assignments.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <button
-                    onClick={() => setIsAddRsvpOpen(true)}
-                    className="px-4 py-2.5 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all"
-                  >
-                    <Plus className="w-4 h-4 text-amber-300" />
-                    <span>Add Manual RSVP</span>
-                  </button>
-
-                  <button
-                    onClick={exportToCsv}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Export CSV</span>
-                  </button>
-
-                  <button
-                    onClick={handlePrint}
-                    className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>Print</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Search & Filters */}
-              <div className="p-4 sm:px-6 bg-slate-50/80 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div className="relative">
-                  <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search guest name, email, companion..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:border-[#1b3b5f]"
-                  />
-                </div>
-
-                <div>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => {
-                      setStatusFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:border-[#1b3b5f]"
-                  >
-                    <option value="all">All Statuses (Attending + Declined)</option>
-                    <option value="attending">Joyfully Attending Only</option>
-                    <option value="declined">Regretfully Declined Only</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 text-xs text-slate-500">
-                  <span>Show entries:</span>
-                  <select
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(parseInt(e.target.value, 10));
-                      setCurrentPage(1);
-                    }}
-                    className="px-2.5 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:border-[#1b3b5f]"
-                  >
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-100 text-[11px] uppercase font-bold text-[#1b3b5f] border-b border-slate-200">
-                    <tr>
-                      <th
-                        className="p-3.5 cursor-pointer hover:bg-slate-200 transition-colors"
-                        onClick={() => {
-                          setSortField("fullName");
-                          setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                        }}
-                      >
-                        <div className="flex items-center gap-1">
-                          <span>Guest Name</span>
-                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                        </div>
-                      </th>
-                      <th className="p-3.5">Status</th>
-                      <th
-                        className="p-3.5 cursor-pointer hover:bg-slate-200 transition-colors"
-                        onClick={() => {
-                          setSortField("guestCount");
-                          setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                        }}
-                      >
-                        <div className="flex items-center gap-1">
-                          <span>Seats</span>
-                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                        </div>
-                      </th>
-                      <th className="p-3.5">Companions</th>
-                      <th className="p-3.5">Table Assignment</th>
-                      <th className="p-3.5">Contact Info</th>
-                      <th
-                        className="p-3.5 cursor-pointer hover:bg-slate-200 transition-colors"
-                        onClick={() => {
-                          setSortField("submittedAt");
-                          setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                        }}
-                      >
-                        <div className="flex items-center gap-1">
-                          <span>Submitted</span>
-                          <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                        </div>
-                      </th>
-                      <th className="p-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {paginatedRsvps.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="p-8 text-center text-slate-400">
-                          No guest reservations matching the search/filter criteria.
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <th className="p-3.5">Party / Primary Guest</th>
+                        <th className="p-3.5">Table Assignment</th>
+                        <th className="p-3.5">Invited Members &amp; Status</th>
+                        <th className="p-3.5">Contact</th>
+                        <th className="p-3.5 text-right">Actions</th>
                       </tr>
-                    ) : (
-                      paginatedRsvps.map((r) => (
-                        <tr key={r.id} className="hover:bg-blue-50/50 transition-colors">
-                          <td className="p-3.5 font-bold text-[#1b3b5f]">
-                            {r.fullName}
-                          </td>
-                          <td className="p-3.5">
-                            <button
-                              onClick={() => handleToggleStatus(r.id, r.status)}
-                              title="Click to toggle status"
-                              className="cursor-pointer"
-                            >
-                              {r.status === "attending" ? (
-                                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] inline-flex items-center gap-1 hover:bg-emerald-200 transition-colors">
-                                  <CheckCircle2 className="w-3 h-3" /> Attending
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px] inline-flex items-center gap-1 hover:bg-rose-200 transition-colors">
-                                  <XCircle className="w-3 h-3" /> Declined
-                                </span>
-                              )}
-                            </button>
-                          </td>
-                          <td className="p-3.5 font-bold text-[#1b3b5f]">
-                            {r.guestCount || 1}
-                          </td>
-                          <td className="p-3.5 text-slate-600">
-                            {r.companionNames || "-"}
-                          </td>
-                          <td className="p-3.5">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[11px]">
-                              {r.tableNumber || "Unassigned"}
-                            </span>
-                          </td>
-                          <td className="p-3.5">
-                            <p className="font-medium">{r.email}</p>
-                            <p className="text-slate-400 font-mono text-[10px]">{r.phone}</p>
-                          </td>
-                          <td className="p-3.5 text-slate-400 text-[10px] whitespace-nowrap">
-                            {r.submittedAt}
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => setSelectedRsvpView(r)}
-                                title="View Details"
-                                className="p-1.5 rounded-lg hover:bg-blue-100 text-slate-600 hover:text-blue-900 transition-colors"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setEditingRsvp(r)}
-                                title="Edit"
-                                className="p-1.5 rounded-lg hover:bg-amber-100 text-slate-600 hover:text-amber-800 transition-colors"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteRsvp(r.id, r.fullName)}
-                                title="Delete"
-                                className="p-1.5 rounded-lg hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="p-4 sm:px-6 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-                <p>
-                  Showing {sortedRsvps.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{" "}
-                  {Math.min(currentPage * pageSize, sortedRsvps.length)} of {sortedRsvps.length} entries
-                </p>
-
-                <div className="flex items-center space-x-1">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 font-medium"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                    .map((p, idx, arr) => (
-                      <React.Fragment key={p}>
-                        {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1">...</span>}
-                        <button
-                          onClick={() => setCurrentPage(p)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                            currentPage === p
-                              ? "bg-[#1b3b5f] text-white"
-                              : "border border-slate-200 hover:bg-slate-50 text-slate-700"
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      </React.Fragment>
-                    ))}
-
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 font-medium"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ======================= TAB 3: ENTOURAGE MANAGER ======================= */}
-          {activeTab === "entourage" && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h2 className="font-serif-title text-xl font-bold text-[#1b3b5f]">
-                    Wedding Entourage &amp; Sponsor Directory Manager
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Update Principal Sponsors (Ninongs &amp; Ninangs), Groomsmen, Bridesmaids, Best Man, Maid of Honor, and Parents.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {entourage.map((cat, catIdx) => (
-                  <div
-                    key={cat.id || catIdx}
-                    className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold tracking-wider text-[#7094b7]">
-                            Category #{catIdx + 1}
-                          </span>
-                          <h3 className="font-serif-title text-lg font-bold text-[#1b3b5f]">
-                            {cat.category}
-                          </h3>
-                        </div>
-                        <span className="px-2.5 py-1 rounded-full bg-blue-50 text-[#1b3b5f] text-xs font-bold">
-                          {cat.members.length} Members
-                        </span>
-                      </div>
-
-                      <div className="space-y-2.5 mb-6">
-                        {cat.members.map((member) => (
-                          <div
-                            key={member.id}
-                            className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between hover:bg-blue-50/50 transition-colors group"
-                          >
-                            <div>
-                              <p className="text-[10px] uppercase font-bold text-[#7094b7]">
-                                {member.role}
-                              </p>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {parties
+                        .filter(
+                          (p) =>
+                            p.partyName.toLowerCase().includes(partySearch.toLowerCase()) ||
+                            p.primaryGuest.toLowerCase().includes(partySearch.toLowerCase())
+                        )
+                        .map((party) => (
+                          <tr key={party.id} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="p-3.5">
                               <p className="font-serif-title font-bold text-sm text-[#1b3b5f]">
-                                {member.name}
+                                {party.partyName}
                               </p>
-                            </div>
-
-                            <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
+                              <p className="text-[11px] text-slate-500">
+                                Primary: <span className="font-semibold">{party.primaryGuest}</span> ({party.members.length} Max Seats)
+                              </p>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-900 text-[10px] font-semibold border border-blue-100">
+                                {party.tableNumber || "Unassigned"}
+                              </span>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex flex-wrap gap-1.5">
+                                {party.members.map((m) => (
+                                  <span
+                                    key={m.id}
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                      m.isAttending
+                                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                                    }`}
+                                  >
+                                    {m.name} ({m.isAttending ? "Present" : "Absent"})
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-slate-500 text-[11px]">
+                              {party.phone && <p>{party.phone}</p>}
+                              {party.email && <p className="text-slate-400">{party.email}</p>}
+                            </td>
+                            <td className="p-3.5 text-right space-x-2">
                               <button
-                                onClick={() => setEditingMember({ catIdx, member })}
-                                className="p-1 rounded-lg hover:bg-amber-100 text-slate-500 hover:text-amber-800"
-                                title="Edit Member"
+                                onClick={() => handleOpenEditParty(party)}
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                                title="Edit Party"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => handleDeleteEntourageMember(catIdx, member.id)}
-                                className="p-1 rounded-lg hover:bg-rose-100 text-slate-500 hover:text-rose-700"
-                                title="Delete Member"
+                                onClick={() => handleDeleteParty(party.id, party.partyName)}
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                                title="Delete Party"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. PALETTE TAB */}
+          {activeTab === "palette" && (
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="font-serif-title font-bold text-lg text-[#1b3b5f]">
+                      Live Color Palette Swatches
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      These swatches are rendered live across the wedding website.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleOpenAddColor}
+                    className="px-3 py-1.5 rounded-xl bg-[#1b3b5f] text-white text-xs font-semibold flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Color</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {colors.map((c) => (
+                    <div
+                      key={c.id}
+                      className="p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between group hover:border-blue-300 transition-all bg-white"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div
+                          className="w-12 h-12 rounded-2xl shadow-inner border-2 border-white shrink-0"
+                          style={{ backgroundColor: c.hex }}
+                        />
+                        <div>
+                          <p className="font-serif-title font-bold text-sm text-[#1b3b5f]">
+                            {c.name}
+                          </p>
+                          <p className="font-mono text-[11px] text-slate-400 uppercase">
+                            {c.hex}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-light mt-0.5">
+                            {c.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleOpenEditColor(c)}
+                          className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteColor(c.id, c.name)}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. RSVPS TAB */}
+          {activeTab === "rsvps" && (
+            <div className="space-y-6">
+              <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search guest or companion..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#1b3b5f]"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-600 focus:outline-none"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="attending">Attending Only</option>
+                      <option value="declined">Declined Only</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <th className="p-3.5">Guest Name</th>
+                        <th className="p-3.5">Status</th>
+                        <th className="p-3.5">Seats</th>
+                        <th className="p-3.5">Member Breakdown</th>
+                        <th className="p-3.5">Table</th>
+                        <th className="p-3.5">Contact</th>
+                        <th className="p-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {paginatedRsvps.map((rsvp) => (
+                        <tr key={rsvp.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="p-3.5">
+                            <p className="font-serif-title font-bold text-sm text-[#1b3b5f]">
+                              {rsvp.fullName}
+                            </p>
+                            <span className="text-[10px] text-slate-400">{rsvp.submittedAt}</span>
+                          </td>
+                          <td className="p-3.5">
+                            <button
+                              onClick={() => handleToggleStatus(rsvp.id, rsvp.status)}
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
+                                rsvp.status === "attending"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-rose-100 text-rose-800"
+                              }`}
+                            >
+                              {rsvp.status === "attending" ? "Confirmed" : "Declined"}
+                            </button>
+                          </td>
+                          <td className="p-3.5 font-bold text-slate-700">
+                            {rsvp.guestCount || 1}
+                          </td>
+                          <td className="p-3.5">
+                            {rsvp.memberBreakdown && rsvp.memberBreakdown.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {rsvp.memberBreakdown.map((m, idx) => (
+                                  <span
+                                    key={idx}
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-medium ${
+                                      m.isAttending
+                                        ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                                    }`}
+                                  >
+                                    {m.name} ({m.isAttending ? "Present" : "Absent"})
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-[11px]">—</span>
+                            )}
+                          </td>
+                          <td className="p-3.5">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">
+                              {rsvp.tableNumber || "Unassigned"}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-[11px] text-slate-500">
+                            {rsvp.phone && <p>{rsvp.phone}</p>}
+                            {rsvp.email && <p className="text-slate-400">{rsvp.email}</p>}
+                          </td>
+                          <td className="p-3.5 text-right space-x-1.5">
+                            <button
+                              onClick={() => handleDeleteRsvp(rsvp.id, rsvp.fullName)}
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                              title="Delete RSVP"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 5. ENTOURAGE TAB */}
+          {activeTab === "entourage" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {entourage.map((cat, catIdx) => (
+                  <div
+                    key={cat.id}
+                    className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                        <h4 className="font-serif-title font-bold text-base text-[#1b3b5f]">
+                          {cat.category}
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900 text-[10px] font-bold">
+                          {cat.members.length} Members
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {cat.members.map((m) => (
+                          <div
+                            key={m.id}
+                            className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-800">{m.name}</p>
+                              <p className="text-[10px] text-slate-400 uppercase">{m.role}</p>
                             </div>
+                            <button
+                              onClick={() => handleDeleteEntourageMember(catIdx, m.id)}
+                              className="p-1 text-rose-500 hover:bg-rose-50 rounded"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         ))}
                       </div>
                     </div>
-
-                    {editingCategoryIdx === catIdx ? (
-                      <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-3">
-                        <p className="text-xs font-bold text-[#1b3b5f] uppercase tracking-wider">
-                          Add New Entourage Member
-                        </p>
-                        <input
-                          type="text"
-                          placeholder="Role / Title (e.g. Ninong / Groomsman)"
-                          value={newMemberRole}
-                          onChange={(e) => setNewMemberRole(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Full Name (e.g. Hon. Juan Dela Cruz)"
-                          value={newMemberName}
-                          onChange={(e) => setNewMemberName(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white"
-                        />
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setEditingCategoryIdx(null)}
-                            className="px-3 py-1.5 text-xs text-slate-500 font-semibold uppercase"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => handleAddMemberToCategory(catIdx)}
-                            className="px-4 py-1.5 rounded-lg bg-[#1b3b5f] text-white text-xs font-bold uppercase"
-                          >
-                            Add Member
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setEditingCategoryIdx(catIdx);
-                          setNewMemberRole("");
-                          setNewMemberName("");
-                        }}
-                        className="w-full py-2.5 rounded-xl border-2 border-dashed border-slate-200 hover:border-[#1b3b5f] text-slate-500 hover:text-[#1b3b5f] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Member to {cat.category}</span>
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ======================= TAB 4: WISHES GUESTBOOK ======================= */}
+          {/* 6. WISHES TAB */}
           {activeTab === "wishes" && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h2 className="font-serif-title text-xl font-bold text-[#1b3b5f]">
-                    Guestbook Wishes Wall &amp; Message Moderation
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Review and moderate messages left by wedding guests on the public guestbook.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {wishes.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1b3b5f] flex items-center justify-center font-bold text-xs">
-                            {item.name.charAt(0)}
-                          </div>
-                          <div>
-                            <h4 className="font-serif-title font-bold text-sm text-[#1b3b5f] leading-none">
-                              {item.name}
-                            </h4>
-                            <p className="text-[10px] text-slate-400 mt-0.5">{item.relationship}</p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] text-slate-400">{item.date}</span>
-                      </div>
-
-                      <p className="text-xs text-slate-600 font-light leading-relaxed italic mb-4">
-                        &ldquo;{item.message}&rdquo;
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] text-rose-500 font-semibold flex items-center gap-1">
-                        <Heart className="w-3 h-3 fill-rose-500" /> {item.likes} Likes
-                      </span>
-
-                      <button
-                        onClick={() => handleDeleteWish(item.id)}
-                        className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete</span>
-                      </button>
-                    </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+              <h3 className="font-serif-title font-bold text-lg text-[#1b3b5f]">
+                Guestbook Wishes Wall ({wishes.length})
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {wishes.map((w) => (
+                  <div key={w.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+                    <p className="font-bold text-[#1b3b5f]">{w.name} ({w.relationship})</p>
+                    <p className="italic text-slate-600 my-2">&ldquo;{w.message}&rdquo;</p>
+                    <span className="text-[10px] text-slate-400">{w.date} &bull; {w.likes} ❤️</span>
                   </div>
                 ))}
               </div>
@@ -1212,384 +1218,242 @@ export default function AdminPage() {
         </main>
       </div>
 
-      {/* ======================= MODAL: ADD MANUAL RSVP ======================= */}
-      {isAddRsvpOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 my-8">
-            <h3 className="font-serif-title text-xl font-bold text-[#1b3b5f] mb-1">
-              Add Manual Guest Reservation
-            </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Manually enter a guest who confirmed via phone, SMS, or in person.
-            </p>
-
-            <form onSubmit={handleCreateManualRsvp} className="space-y-4 text-xs">
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Full Guest Name *
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  required
-                  placeholder="e.g. Mayor Juan Dela Cruz"
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Attendance Status
-                  </label>
-                  <select name="status" className="w-full px-3 py-2.5 rounded-xl border border-slate-300">
-                    <option value="attending">Joyfully Attending</option>
-                    <option value="declined">Regretfully Declined</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Reserved Seats
-                  </label>
-                  <select name="guestCount" className="w-full px-3 py-2.5 rounded-xl border border-slate-300">
-                    <option value="1">1 Seat</option>
-                    <option value="2">2 Seats (+1)</option>
-                    <option value="3">3 Seats</option>
-                    <option value="4">4 Seats</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Companion Names
-                </label>
-                <input
-                  type="text"
-                  name="companionNames"
-                  placeholder="e.g. Mrs. Maria Dela Cruz"
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="guest@gmail.com"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                  />
-                </div>
-
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Contact Phone
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="+63 917 123 4567"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Table Assignment
-                </label>
-                <input
-                  type="text"
-                  name="tableNumber"
-                  placeholder="e.g. VIP Table 1"
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Message / Notes
-                </label>
-                <textarea
-                  name="message"
-                  rows={2}
-                  placeholder="Notes or greetings..."
-                  className="w-full p-3 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAddRsvpOpen(false)}
-                  className="px-4 py-2.5 font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#1b3b5f] text-white font-bold uppercase tracking-wider shadow-md hover:bg-[#132c49]"
-                >
-                  Save Guest RSVP
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================= MODAL: EDIT RSVP ======================= */}
-      {editingRsvp && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 my-8">
-            <h3 className="font-serif-title text-xl font-bold text-[#1b3b5f] mb-1">
-              Edit RSVP &bull; {editingRsvp.fullName}
-            </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Update seating count, companion names, or table assignment.
-            </p>
-
-            <form onSubmit={handleSaveEditRsvp} className="space-y-4 text-xs">
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Full Guest Name
-                </label>
-                <input
-                  type="text"
-                  value={editingRsvp.fullName}
-                  onChange={(e) => setEditingRsvp({ ...editingRsvp, fullName: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={editingRsvp.status}
-                    onChange={(e) =>
-                      setEditingRsvp({ ...editingRsvp, status: e.target.value as any })
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                  >
-                    <option value="attending">Joyfully Attending</option>
-                    <option value="declined">Regretfully Declined</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Reserved Seats
-                  </label>
-                  <select
-                    value={editingRsvp.guestCount}
-                    onChange={(e) =>
-                      setEditingRsvp({ ...editingRsvp, guestCount: parseInt(e.target.value, 10) })
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                  >
-                    <option value={1}>1 Seat</option>
-                    <option value={2}>2 Seats</option>
-                    <option value={3}>3 Seats</option>
-                    <option value={4}>4 Seats</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Companions
-                </label>
-                <input
-                  type="text"
-                  value={editingRsvp.companionNames}
-                  onChange={(e) =>
-                    setEditingRsvp({ ...editingRsvp, companionNames: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={editingRsvp.email}
-                    onChange={(e) =>
-                      setEditingRsvp({ ...editingRsvp, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                  />
-                </div>
-
-                <div>
-                  <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={editingRsvp.phone}
-                    onChange={(e) =>
-                      setEditingRsvp({ ...editingRsvp, phone: e.target.value })
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Table Assignment
-                </label>
-                <input
-                  type="text"
-                  value={editingRsvp.tableNumber || ""}
-                  onChange={(e) =>
-                    setEditingRsvp({ ...editingRsvp, tableNumber: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setEditingRsvp(null)}
-                  className="px-4 py-2.5 font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#1b3b5f] text-white font-bold uppercase tracking-wider shadow-md hover:bg-[#132c49]"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================= MODAL: VIEW RSVP DETAILS ======================= */}
-      {selectedRsvpView && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200">
-            <div className="text-center pb-4 border-b border-slate-100">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#7094b7]">
-                Guest RSVP Details
-              </span>
-              <h3 className="font-serif-title text-xl font-bold text-[#1b3b5f] mt-0.5">
-                {selectedRsvpView.fullName}
+      {/* ======================= MODALS ======================= */}
+      {/* 1. Add/Edit Party Modal */}
+      {isAddPartyOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+              <h3 className="font-serif-title font-bold text-lg text-[#1b3b5f]">
+                {editingParty ? "Edit Invited Party" : "Add New Household Party"}
               </h3>
-              <p className="text-[11px] text-slate-400 font-mono">ID: {selectedRsvpView.id}</p>
+              <button
+                onClick={() => setIsAddPartyOpen(false)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="py-4 space-y-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-bold uppercase text-[10px]">Status:</span>
-                <span className="font-bold text-[#1b3b5f] capitalize">{selectedRsvpView.status}</span>
+            <form onSubmit={handleSaveParty} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Party / Household Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Hon. Roberto Gomez & Dra. Maria Teresa Gomez"
+                  value={partyFormName}
+                  onChange={(e) => setPartyFormName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
+                />
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-bold uppercase text-[10px]">Seats:</span>
-                <span className="font-bold text-[#1b3b5f]">{selectedRsvpView.guestCount} Guest(s)</span>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Primary Guest Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Roberto Gomez"
+                  value={partyFormPrimary}
+                  onChange={(e) => setPartyFormPrimary(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
+                />
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-bold uppercase text-[10px]">Companions:</span>
-                <span>{selectedRsvpView.companionNames || "None"}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-bold uppercase text-[10px]">Table:</span>
-                <span className="font-semibold">{selectedRsvpView.tableNumber || "Unassigned"}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-bold uppercase text-[10px]">Contact:</span>
-                <span>{selectedRsvpView.email} / {selectedRsvpView.phone}</span>
-              </div>
-              {selectedRsvpView.message && (
-                <div className="py-1">
-                  <span className="text-slate-400 font-bold uppercase text-[10px] block">Message to Couple:</span>
-                  <p className="text-slate-600 italic">&ldquo;{selectedRsvpView.message}&rdquo;</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    placeholder="email@example.com"
+                    value={partyFormEmail}
+                    onChange={(e) => setPartyFormEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
+                  />
                 </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => setSelectedRsvpView(null)}
-              className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ======================= MODAL: EDIT ENTOURAGE MEMBER ======================= */}
-      {editingMember && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200">
-            <h3 className="font-serif-title text-xl font-bold text-[#1b3b5f] mb-4">
-              Edit Entourage Member
-            </h3>
-
-            <form onSubmit={handleUpdateEntourageMember} className="space-y-4 text-xs">
-              <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Role / Title
-                </label>
-                <input
-                  type="text"
-                  value={editingMember.member.role}
-                  onChange={(e) =>
-                    setEditingMember({
-                      ...editingMember,
-                      member: { ...editingMember.member, role: e.target.value },
-                    })
-                  }
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
-                />
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    placeholder="+63 917 123 4567"
+                    value={partyFormPhone}
+                    onChange={(e) => setPartyFormPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block uppercase font-bold tracking-wider text-slate-600 mb-1">
-                  Full Name
-                </label>
+                <label className="block font-bold text-slate-700 mb-1">Table Number</label>
                 <input
                   type="text"
-                  value={editingMember.member.name}
-                  onChange={(e) =>
-                    setEditingMember({
-                      ...editingMember,
-                      member: { ...editingMember.member, name: e.target.value },
-                    })
-                  }
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300"
+                  placeholder="e.g. VIP Table 1"
+                  value={partyFormTable}
+                  onChange={(e) => setPartyFormTable(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              {/* Accompanying Members List */}
+              <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="font-bold text-slate-700">
+                    Invited Members in this Party ({partyFormMembers.length})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddMemberToPartyForm}
+                    className="text-[11px] text-blue-600 hover:underline font-semibold"
+                  >
+                    + Add Member
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {partyFormMembers.map((m, idx) => (
+                    <div key={m.id} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder={`Member ${idx + 1} Name`}
+                        value={m.name}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPartyFormMembers(
+                            partyFormMembers.map((item) =>
+                              item.id === m.id ? { ...item, name: val } : item
+                            )
+                          );
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Role / Relation"
+                        value={m.role}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPartyFormMembers(
+                            partyFormMembers.map((item) =>
+                              item.id === m.id ? { ...item, role: val } : item
+                            )
+                          );
+                        }}
+                        className="w-32 px-3 py-1.5 rounded-lg border border-slate-200 text-xs"
+                      />
+                      {partyFormMembers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMemberFromPartyForm(m.id)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditingMember(null)}
-                  className="px-4 py-2 font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800"
+                  onClick={() => setIsAddPartyOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#1b3b5f] text-white font-bold uppercase tracking-wider"
+                  className="px-5 py-2 rounded-xl bg-[#1b3b5f] text-white font-bold hover:bg-blue-900"
                 >
-                  Save Member
+                  Save Party
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Add/Edit Color Modal */}
+      {isAddColorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+              <h3 className="font-serif-title font-bold text-lg text-[#1b3b5f]">
+                {editingColor ? "Edit Color Swatch" : "Add New Palette Color"}
+              </h3>
+              <button
+                onClick={() => setIsAddColorOpen(false)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveColor} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Color Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Cerulean Blue"
+                  value={newColorName}
+                  onChange={(e) => setNewColorName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">HEX Code *</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={newColorHex}
+                    onChange={(e) => setNewColorHex(e.target.value)}
+                    className="w-10 h-10 rounded-xl border border-slate-200 cursor-pointer p-0.5"
+                  />
+                  <input
+                    type="text"
+                    required
+                    placeholder="#7B9EBD"
+                    value={newColorHex}
+                    onChange={(e) => setNewColorHex(e.target.value)}
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono focus:outline-none focus:border-[#1b3b5f]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Description / Guest Role Note
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. For Bridesmaids & Accent Details"
+                  value={newColorDesc}
+                  onChange={(e) => setNewColorDesc(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddColorOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#1b3b5f] text-white font-bold hover:bg-blue-900"
+                >
+                  Save Swatch
                 </button>
               </div>
             </form>

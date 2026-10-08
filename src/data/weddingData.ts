@@ -104,9 +104,174 @@ export interface WeddingData {
       claimedBy?: string;
     }[];
   };
+  invitedParties: {
+    id: string;
+    partyName: string;
+    primaryGuest: string;
+    email?: string;
+    phone?: string;
+    maxSeats: number;
+    members: {
+      id: string;
+      name: string;
+      role?: string;
+      isAttending: boolean;
+    }[];
+    tableNumber?: string;
+    notes?: string;
+  }[];
 }
 
 export const weddingData: WeddingData = {
+  invitedParties: [
+    {
+      id: "pty-1",
+      partyName: "Hon. Roberto Gomez & Dra. Maria Teresa Gomez",
+      primaryGuest: "Roberto Gomez",
+      email: "mtgomez@gmail.com",
+      phone: "+63 917 555 1234",
+      maxSeats: 2,
+      tableNumber: "VIP Table 1 (Ninongs & Ninangs)",
+      members: [
+        { id: "m-1-1", name: "Hon. Roberto Gomez", role: "Principal Sponsor (Ninong)", isAttending: true },
+        { id: "m-1-2", name: "Dra. Maria Teresa Gomez", role: "Principal Sponsor (Ninang)", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-2",
+      partyName: "Engr. Manuel Cruz & Family",
+      primaryGuest: "Manuel Cruz",
+      email: "manuel.cruz@engineering.ph",
+      phone: "+63 920 777 9900",
+      maxSeats: 3,
+      tableNumber: "VIP Table 1 (Ninongs & Ninangs)",
+      members: [
+        { id: "m-2-1", name: "Engr. Manuel Cruz", role: "Principal Sponsor (Ninong)", isAttending: true },
+        { id: "m-2-2", name: "Mrs. Patricia Cruz", role: "Principal Sponsor (Ninang)", isAttending: true },
+        { id: "m-2-3", name: "Mateo Elijah Cruz", role: "Bible Bearer", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-3",
+      partyName: "Atty. Fernando Rivera & Family",
+      primaryGuest: "Fernando Rivera",
+      email: "frivera.law@gmail.com",
+      phone: "+63 917 444 5566",
+      maxSeats: 3,
+      tableNumber: "VIP Table 1 (Ninongs & Ninangs)",
+      members: [
+        { id: "m-3-1", name: "Atty. Fernando Rivera", role: "Principal Sponsor (Ninong)", isAttending: true },
+        { id: "m-3-2", name: "Mrs. Carmela Rivera", role: "Principal Sponsor (Ninang)", isAttending: true },
+        { id: "m-3-3", name: "Mia Isabella Rivera", role: "Flower Girl", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-4",
+      partyName: "Dr. Arthur Tan & Dra. Sylvia Tan",
+      primaryGuest: "Arthur Tan",
+      email: "art.tan@med.ph",
+      phone: "+63 918 333 7788",
+      maxSeats: 2,
+      tableNumber: "VIP Table 1 (Ninongs & Ninangs)",
+      members: [
+        { id: "m-4-1", name: "Dr. Arthur Tan", role: "Principal Sponsor (Ninong)", isAttending: true },
+        { id: "m-4-2", name: "Dra. Sylvia Tan", role: "Principal Sponsor (Ninang)", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-5",
+      partyName: "Christian Paul Ramos & Companion",
+      primaryGuest: "Christian Paul Ramos",
+      email: "christian.ramos@gmail.com",
+      phone: "+63 917 888 1122",
+      maxSeats: 2,
+      tableNumber: "Table 2 (Entourage)",
+      members: [
+        { id: "m-5-1", name: "Christian Paul Ramos", role: "Best Man", isAttending: true },
+        { id: "m-5-2", name: "Sofia Mendoza", role: "Candle Sponsor / Companion", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-6",
+      partyName: "Katarina Denise Santos & Companion",
+      primaryGuest: "Katarina Denise Santos",
+      email: "katarina.santos@yahoo.com",
+      phone: "+63 918 222 3344",
+      maxSeats: 2,
+      tableNumber: "Table 2 (Entourage)",
+      members: [
+        { id: "m-6-1", name: "Katarina Denise Santos", role: "Maid of Honor", isAttending: true },
+        { id: "m-6-2", name: "Guest Plus-One", role: "Companion", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-7",
+      partyName: "Mark Anthony Lim & Camille Joy Perez",
+      primaryGuest: "Mark Anthony Lim",
+      email: "mark.lim@gmail.com",
+      phone: "+63 915 333 4455",
+      maxSeats: 2,
+      tableNumber: "Table 3 (Entourage & Friends)",
+      members: [
+        { id: "m-7-1", name: "Mark Anthony Lim", role: "Groomsman", isAttending: true },
+        { id: "m-7-2", name: "Camille Joy Perez", role: "Bridesmaid", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-8",
+      partyName: "John David Sy & Alyssa Marie Garcia",
+      primaryGuest: "John David Sy",
+      email: "jdsy@gmail.com",
+      phone: "+63 917 123 7890",
+      maxSeats: 2,
+      tableNumber: "Table 3 (Entourage & Friends)",
+      members: [
+        { id: "m-8-1", name: "John David Sy", role: "Groomsman", isAttending: true },
+        { id: "m-8-2", name: "Alyssa Marie Garcia", role: "Bridesmaid", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-9",
+      partyName: "Patrick Vince Hernandez & Bea Nicole Flores",
+      primaryGuest: "Patrick Vince Hernandez",
+      email: "pv.hernandez@gmail.com",
+      phone: "+63 919 444 8822",
+      maxSeats: 2,
+      tableNumber: "Table 3 (Entourage & Friends)",
+      members: [
+        { id: "m-9-1", name: "Patrick Vince Hernandez", role: "Groomsman", isAttending: true },
+        { id: "m-9-2", name: "Bea Nicole Flores", role: "Bridesmaid", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-10",
+      partyName: "Ramos Family Household",
+      primaryGuest: "Eduardo Ramos",
+      email: "eduardo.ramos@family.ph",
+      phone: "+63 917 000 1122",
+      maxSeats: 3,
+      tableNumber: "Family VIP Table (Groom)",
+      members: [
+        { id: "m-10-1", name: "Mr. Eduardo Ramos", role: "Father of the Groom", isAttending: true },
+        { id: "m-10-2", name: "Mrs. Cristina Ramos", role: "Mother of the Groom", isAttending: true },
+        { id: "m-10-3", name: "Lucas Gabriel Ramos", role: "Coin Bearer / Brother", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-11",
+      partyName: "Santos Family Household",
+      primaryGuest: "Antonio Santos",
+      email: "antonio.santos@family.ph",
+      phone: "+63 918 000 3344",
+      maxSeats: 3,
+      tableNumber: "Family VIP Table (Bride)",
+      members: [
+        { id: "m-11-1", name: "Mr. Antonio Santos", role: "Father of the Bride", isAttending: true },
+        { id: "m-11-2", name: "Mrs. Evelyn Santos", role: "Mother of the Bride", isAttending: true },
+        { id: "m-11-3", name: "Liam Alexander Santos", role: "Ring Bearer / Brother", isAttending: true },
+      ],
+    },
+  ],
   groom: {
     fullName: "Aian Christopher Ramos",
     nickname: "Aian",

@@ -22,7 +22,7 @@ export const WeddingDetailsSection: React.FC = () => {
   };
 
   return (
-    <section id="details" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
+    <section id="details" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute -top-10 -right-10 w-44 sm:w-64 h-44 sm:h-64 pointer-events-none opacity-20 sm:opacity-25 mix-blend-multiply z-0">
         <Image
@@ -43,9 +43,9 @@ export const WeddingDetailsSection: React.FC = () => {
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="text-center max-w-2xl mx-auto mb-10">
           {/* Floral Header Banner */}
-          <div className="relative w-36 sm:w-48 h-12 sm:h-16 mx-auto mb-2 opacity-85">
+          <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
               src="/images/floral-divider.jpg"
               alt="Dusty Blue Floral Header"
@@ -53,15 +53,15 @@ export const WeddingDetailsSection: React.FC = () => {
               className="object-contain mix-blend-multiply"
             />
           </div>
-          <div className="inline-flex items-center justify-center gap-2 mb-2">
+          <div className="inline-flex items-center justify-center gap-2 mb-1">
             <span className="h-px w-8 bg-[#7094b7]" />
             <span className="font-script text-2xl sm:text-3xl text-[#7094b7]">Where &amp; When</span>
             <span className="h-px w-8 bg-[#7094b7]" />
           </div>
-          <h2 className="font-serif-title text-3xl sm:text-4xl lg:text-5xl font-bold tracking-wide text-[#1b3b5f] uppercase">
+          <h2 className="font-serif-title text-3xl sm:text-4xl font-bold tracking-wide text-[#1b3b5f] uppercase">
             Ceremony &amp; Reception
           </h2>
-          <p className="mt-4 text-sm sm:text-base text-slate-600 font-light">
+          <p className="mt-2 text-xs sm:text-sm text-slate-600 font-light">
             We cannot wait to celebrate this sacred milestone with our closest family and friends.
           </p>
         </div>

@@ -78,7 +78,7 @@ export const PhotoGallerySection: React.FC = () => {
   };
 
   return (
-    <section id="gallery" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
+    <section id="gallery" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute top-0 -right-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0">
         <Image
@@ -100,14 +100,14 @@ export const PhotoGallerySection: React.FC = () => {
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-2xl mx-auto mb-14"
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto mb-8"
         >
           {/* Floral Header Banner */}
-          <div className="relative w-36 sm:w-48 h-12 sm:h-16 mx-auto mb-2 opacity-85">
+          <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
               src="/images/floral-divider.jpg"
               alt="Dusty Blue Floral Header"
@@ -115,15 +115,15 @@ export const PhotoGallerySection: React.FC = () => {
               className="object-contain mix-blend-multiply"
             />
           </div>
-          <div className="inline-flex items-center justify-center gap-2 mb-2">
+          <div className="inline-flex items-center justify-center gap-2 mb-1">
             <span className="h-px w-8 bg-[#7094b7]" />
             <span className="font-script text-2xl sm:text-3xl text-[#7094b7]">Captured Moments</span>
             <span className="h-px w-8 bg-[#7094b7]" />
           </div>
-          <h2 className="font-serif-title text-3xl sm:text-4xl lg:text-5xl font-bold tracking-wide text-[#1b3b5f] uppercase">
+          <h2 className="font-serif-title text-3xl sm:text-4xl font-bold tracking-wide text-[#1b3b5f] uppercase">
             Prenup &amp; Memory Gallery
           </h2>
-          <p className="mt-4 text-sm sm:text-base text-slate-600 font-light">
+          <p className="mt-2 text-xs sm:text-sm text-slate-600 font-light">
             Glimpses of our love captured under golden skies and endless ocean horizons.
           </p>
         </motion.div>

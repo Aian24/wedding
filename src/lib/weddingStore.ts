@@ -12,17 +12,53 @@ export interface EntourageCategory {
   members: EntourageMember[];
 }
 
+export interface PartyMember {
+  id: string;
+  name: string;
+  role?: string;
+  isAttending: boolean;
+}
+
+export interface InvitedParty {
+  id: string;
+  partyName: string;
+  primaryGuest: string;
+  email?: string;
+  phone?: string;
+  maxSeats: number;
+  members: PartyMember[];
+  tableNumber?: string;
+  status?: "pending" | "confirmed" | "declined";
+  lastUpdated?: string;
+  notes?: string;
+}
+
+export interface MemberAttendance {
+  name: string;
+  role?: string;
+  isAttending: boolean;
+}
+
 export interface RsvpEntry {
   id: string;
+  partyId?: string;
   fullName: string;
   email: string;
   phone: string;
   status: "attending" | "declined";
   guestCount: number;
   companionNames: string;
+  memberBreakdown?: MemberAttendance[];
   message: string;
   tableNumber?: string;
   submittedAt: string;
+}
+
+export interface ThemeColor {
+  id: string;
+  name: string;
+  hex: string;
+  desc: string;
 }
 
 export interface RegistryItem {
@@ -46,6 +82,8 @@ export interface GuestbookEntry {
 const STORAGE_KEYS = {
   ENTOURAGE: "aian_dang_wedding_entourage",
   RSVPS: "aian_dang_wedding_all_rsvps",
+  PARTIES: "aian_dang_wedding_invited_parties",
+  THEME: "aian_dang_wedding_theme_palette",
   REGISTRY: "aian_dang_wedding_registry_items",
   GUESTBOOK: "aian_dang_wedding_guestbook",
   ADMIN_AUTH: "aian_dang_admin_session",
@@ -178,7 +216,131 @@ export const getInitialRsvps = (): RsvpEntry[] => {
   ];
 };
 
+export const getInitialParties = (): InvitedParty[] => {
+  return defaultData.invitedParties.map((p) => ({
+    ...p,
+    status: p.members.every((m) => m.isAttending)
+      ? "confirmed"
+      : p.members.some((m) => m.isAttending)
+      ? "confirmed"
+      : "pending",
+  }));
+};
+
+export const getInitialThemeColors = (): ThemeColor[] => {
+  return defaultData.theme.colors.map((c, idx) => ({
+    id: `color-${idx}`,
+    name: c.name,
+    hex: c.hex,
+    desc: c.desc,
+  }));
+};
+
 export const weddingStore = {
+  // Parties / Master Guest List
+  getParties(): InvitedParty[] {
+    if (typeof window === "undefined") return getInitialParties();
+    const saved = localStorage.getItem(STORAGE_KEYS.PARTIES);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return getInitialParties();
+      }
+    }
+    const init = getInitialParties();
+    localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(init));
+    return init;
+  },
+
+  saveParties(parties: InvitedParty[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(parties));
+    window.dispatchEvent(new Event("wedding_parties_updated"));
+  },
+
+  addParty(party: Omit<InvitedParty, "id">): InvitedParty {
+    const parties = this.getParties();
+    const newParty: InvitedParty = {
+      id: "pty-" + Date.now(),
+      ...party,
+    };
+    const updated = [newParty, ...parties];
+    this.saveParties(updated);
+    return newParty;
+  },
+
+  updateParty(id: string, updates: Partial<InvitedParty>) {
+    const parties = this.getParties();
+    const updated = parties.map((p) => (p.id === id ? { ...p, ...updates, lastUpdated: new Date().toLocaleString() } : p));
+    this.saveParties(updated);
+  },
+
+  deleteParty(id: string) {
+    const parties = this.getParties();
+    const updated = parties.filter((p) => p.id !== id);
+    this.saveParties(updated);
+  },
+
+  findPartyByGuestName(nameQuery: string): InvitedParty | null {
+    if (!nameQuery || !nameQuery.trim()) return null;
+    const clean = nameQuery.trim().toLowerCase();
+    const parties = this.getParties();
+    return (
+      parties.find((p) => {
+        if (p.primaryGuest.toLowerCase().includes(clean) || p.partyName.toLowerCase().includes(clean)) {
+          return true;
+        }
+        return p.members.some((m) => m.name.toLowerCase().includes(clean));
+      }) || null
+    );
+  },
+
+  // Theme & Palette Swatches
+  getThemeColors(): ThemeColor[] {
+    if (typeof window === "undefined") return getInitialThemeColors();
+    const saved = localStorage.getItem(STORAGE_KEYS.THEME);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return getInitialThemeColors();
+      }
+    }
+    const init = getInitialThemeColors();
+    localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(init));
+    return init;
+  },
+
+  saveThemeColors(colors: ThemeColor[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(colors));
+    window.dispatchEvent(new Event("wedding_theme_updated"));
+  },
+
+  addThemeColor(color: Omit<ThemeColor, "id">): ThemeColor {
+    const colors = this.getThemeColors();
+    const newColor: ThemeColor = {
+      id: "color-" + Date.now(),
+      ...color,
+    };
+    const updated = [...colors, newColor];
+    this.saveThemeColors(updated);
+    return newColor;
+  },
+
+  updateThemeColor(id: string, updates: Partial<ThemeColor>) {
+    const colors = this.getThemeColors();
+    const updated = colors.map((c) => (c.id === id ? { ...c, ...updates } : c));
+    this.saveThemeColors(updated);
+  },
+
+  deleteThemeColor(id: string) {
+    const colors = this.getThemeColors();
+    const updated = colors.filter((c) => c.id !== id);
+    this.saveThemeColors(updated);
+  },
+
   // Entourage
   getEntourage(): EntourageCategory[] {
     if (typeof window === "undefined") return getInitialEntourage();
@@ -232,6 +394,27 @@ export const weddingStore = {
     };
     const updated = [newEntry, ...rsvps];
     this.saveRsvps(updated);
+
+    // If matching party found, update party member states too
+    if (entry.partyId) {
+      const parties = this.getParties();
+      const party = parties.find((p) => p.id === entry.partyId);
+      if (party && entry.memberBreakdown) {
+        const updatedMembers = party.members.map((m) => {
+          const breakdown = entry.memberBreakdown?.find(
+            (b) => b.name.toLowerCase() === m.name.toLowerCase()
+          );
+          return breakdown ? { ...m, isAttending: breakdown.isAttending } : m;
+        });
+        this.updateParty(party.id, {
+          members: updatedMembers,
+          status: entry.status === "attending" ? "confirmed" : "declined",
+          phone: entry.phone || party.phone,
+          email: entry.email || party.email,
+        });
+      }
+    }
+
     return newEntry;
   },
 

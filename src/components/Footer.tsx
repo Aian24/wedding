@@ -11,13 +11,13 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ onReopenEnvelope }) => {
   return (
-    <footer className="bg-[#0e1d2f] text-white pt-20 pb-12 px-4 sm:px-6 lg:px-8 border-t border-blue-900/60 relative overflow-hidden">
+    <footer className="bg-[#0e1d2f] text-white pt-12 pb-8 px-4 sm:px-6 lg:px-8 border-t border-blue-900/60 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-20">
         <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl" />
       </div>
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
-        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-6 shadow-2xl border-2 border-amber-200/80 ring-4 ring-white/10 bg-white">
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden mx-auto mb-4 shadow-2xl border-2 border-amber-200/80 ring-4 ring-white/10 bg-white">
           <Image
             src="/images/wedding-logo.png"
             alt="Aian & Dang Monogram Crest"
