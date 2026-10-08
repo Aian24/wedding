@@ -1,26 +1,130 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --primary-blue: #1b3b5f;
+    --dusty-blue: #7094b7;
+    --soft-blue: #a3c1dd;
+    --ice-blue: #eaf2f9;
+    --champagne: #dfc28d;
+    --navy-deep: #0e1d2f;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #fafbfc;
+    color: #1a2530;
+    font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom Serif & Script Fonts utilities */
+.font-serif-title {
+  font-family: var(--font-cinzel), var(--font-playfair), Georgia, serif;
+}
+
+.font-editorial {
+  font-family: var(--font-playfair), 'Times New Roman', serif;
+}
+
+.font-script {
+  font-family: var(--font-script), 'Brush Script MT', cursive;
+}
+
+.font-body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Luxury Glassmorphism & Borders */
+.glass-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(214, 229, 243, 0.7);
+  box-shadow: 0 10px 30px -5px rgba(27, 59, 95, 0.07), 0 4px 6px -2px rgba(27, 59, 95, 0.03);
+}
+
+.glass-card-dark {
+  background: rgba(14, 29, 47, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(112, 148, 183, 0.3);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+}
+
+.gold-border {
+  border: 1px solid rgba(223, 194, 141, 0.4);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #dfc28d 0%, #b89758 50%, #f3e5c8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.blue-gradient-text {
+  background: linear-gradient(135deg, #1b3b5f 0%, #4c6b8b 50%, #7094b7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Animations */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(112, 148, 183, 0.3), 0 0 30px rgba(223, 194, 141, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(112, 148, 183, 0.6), 0 0 45px rgba(223, 194, 141, 0.4);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-float {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.shimmer-effect {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f6fa;
+}
+::-webkit-scrollbar-thumb {
+  background: #a3c1dd;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7094b7;
 }
