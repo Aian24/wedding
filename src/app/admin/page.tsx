@@ -701,18 +701,18 @@ export default function AdminPage() {
       </aside>
 
       {/* ======================= MAIN CONTENT AREA ======================= */}
-      <div className="flex-1 flex flex-col lg:pl-64 xl:pl-72 min-h-screen">
+      <div className="flex-1 flex flex-col lg:pl-64 xl:pl-72 min-h-screen min-w-0 max-w-full overflow-x-hidden">
         {/* Top App Bar */}
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xs">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xs min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="font-serif-title font-bold text-base sm:text-lg text-[#1b3b5f] capitalize">
+            <div className="min-w-0">
+              <h1 className="font-serif-title font-bold text-base sm:text-lg text-[#1b3b5f] capitalize truncate">
                 {activeTab === "dashboard" && "Analytics Overview"}
                 {activeTab === "parties" && "Master Guest List (Invitation Parties)"}
                 {activeTab === "rsvps" && "RSVP Responses & Table Assignments"}
@@ -720,37 +720,39 @@ export default function AdminPage() {
                 {activeTab === "entourage" && "Wedding Entourage Roster"}
                 {activeTab === "wishes" && "Guestbook Blessings & Messages"}
               </h1>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-slate-400 whitespace-nowrap truncate">
                 Saturday, December 12, 2026 &bull; Tagaytay Celebration
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 shrink-0">
             {activeTab === "parties" && (
               <button
                 onClick={handleOpenAddParty}
-                className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Party</span>
+                <span className="hidden sm:inline">+ Add Party</span>
+                <span className="sm:hidden">+ Party</span>
               </button>
             )}
 
             {activeTab === "palette" && (
               <button
                 onClick={handleOpenAddColor}
-                className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Palette Swatch</span>
+                <span className="hidden sm:inline">+ Add Palette Swatch</span>
+                <span className="sm:hidden">+ Color</span>
               </button>
             )}
 
             {activeTab === "rsvps" && (
               <button
                 onClick={exportToCsv}
-                className="px-3.5 py-2 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                className="px-3.5 py-2 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -760,7 +762,7 @@ export default function AdminPage() {
         </header>
 
         {/* Dynamic Tab Body */}
-        <main className="p-4 sm:p-8 flex-1">
+        <main className="p-4 sm:p-8 flex-1 min-w-0 max-w-full overflow-x-hidden">
           {/* 1. DASHBOARD TAB */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
@@ -875,9 +877,9 @@ export default function AdminPage() {
 
           {/* 2. PARTIES TAB */}
           {activeTab === "parties" && (
-            <div className="space-y-6">
-              <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="space-y-6 min-w-0 max-w-full">
+              <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs min-w-0 max-w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                   <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                     <input
@@ -889,20 +891,25 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 whitespace-nowrap">
                     Showing <strong>{parties.length}</strong> Registered Parties
                   </span>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                {/* Mobile scroll swipe helper hint */}
+                <div className="sm:hidden flex items-center justify-between text-[11px] text-blue-700 bg-blue-50/80 px-3 py-1.5 rounded-xl border border-blue-100 mb-3 font-medium">
+                  <span>&larr; Swipe horizontally to view all columns &rarr;</span>
+                </div>
+
+                <div className="overflow-x-auto w-full max-w-full touch-pan-x pb-2">
+                  <table className="w-full text-left text-xs whitespace-nowrap min-w-[1100px] border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <th className="p-3.5">Party / Primary Guest</th>
-                        <th className="p-3.5">Table Assignment</th>
-                        <th className="p-3.5">Invited Members &amp; Status</th>
-                        <th className="p-3.5">Contact</th>
-                        <th className="p-3.5 text-right">Actions</th>
+                      <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <th className="p-3.5 whitespace-nowrap min-w-[280px]">Party / Primary Guest</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[180px]">Table Assignment</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[340px]">Invited Members &amp; Status</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[220px]">Contact</th>
+                        <th className="p-3.5 text-right whitespace-nowrap min-w-[100px]">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -914,25 +921,25 @@ export default function AdminPage() {
                         )
                         .map((party) => (
                           <tr key={party.id} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="p-3.5">
-                              <p className="font-serif-title font-bold text-sm text-[#1b3b5f]">
+                            <td className="p-3.5 whitespace-nowrap min-w-[280px]">
+                              <p className="font-serif-title font-bold text-sm text-[#1b3b5f] whitespace-nowrap">
                                 {party.partyName}
                               </p>
-                              <p className="text-[11px] text-slate-500">
-                                Primary: <span className="font-semibold">{party.primaryGuest}</span> ({party.members.length} Max Seats)
+                              <p className="text-[11px] text-slate-500 whitespace-nowrap mt-0.5">
+                                Primary: <span className="font-semibold text-slate-700">{party.primaryGuest}</span> ({party.members.length} Max Seats)
                               </p>
                             </td>
-                            <td className="p-3.5">
-                              <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-900 text-[10px] font-semibold border border-blue-100">
+                            <td className="p-3.5 whitespace-nowrap min-w-[180px]">
+                              <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-900 text-[10px] font-semibold border border-blue-100 whitespace-nowrap inline-flex items-center shrink-0">
                                 {party.tableNumber || "Unassigned"}
                               </span>
                             </td>
-                            <td className="p-3.5">
-                              <div className="flex flex-wrap gap-1.5">
+                            <td className="p-3.5 whitespace-nowrap min-w-[340px]">
+                              <div className="flex items-center gap-1.5 whitespace-nowrap flex-nowrap">
                                 {party.members.map((m) => (
                                   <span
                                     key={m.id}
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap shrink-0 inline-flex items-center ${
                                       m.isAttending
                                         ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                         : "bg-slate-100 text-slate-600 border border-slate-200"
@@ -943,21 +950,23 @@ export default function AdminPage() {
                                 ))}
                               </div>
                             </td>
-                            <td className="p-3.5 text-slate-500 text-[11px]">
-                              {party.phone && <p>{party.phone}</p>}
-                              {party.email && <p className="text-slate-400">{party.email}</p>}
+                            <td className="p-3.5 text-slate-500 text-[11px] whitespace-nowrap min-w-[220px]">
+                              <div className="space-y-0.5 whitespace-nowrap">
+                                {party.phone && <p className="whitespace-nowrap font-mono text-slate-700">{party.phone}</p>}
+                                {party.email && <p className="text-slate-400 whitespace-nowrap">{party.email}</p>}
+                              </div>
                             </td>
-                            <td className="p-3.5 text-right space-x-2">
+                            <td className="p-3.5 text-right space-x-2 whitespace-nowrap min-w-[100px]">
                               <button
                                 onClick={() => handleOpenEditParty(party)}
-                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors inline-flex"
                                 title="Edit Party"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteParty(party.id, party.partyName)}
-                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors inline-flex"
                                 title="Delete Party"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -974,8 +983,8 @@ export default function AdminPage() {
 
           {/* 3. PALETTE TAB */}
           {activeTab === "palette" && (
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
+            <div className="space-y-6 min-w-0 max-w-full">
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs min-w-0 max-w-full">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="font-serif-title font-bold text-lg text-[#1b3b5f]">
@@ -1042,9 +1051,9 @@ export default function AdminPage() {
 
           {/* 4. RSVPS TAB */}
           {activeTab === "rsvps" && (
-            <div className="space-y-6">
-              <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="space-y-6 min-w-0 max-w-full">
+              <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs min-w-0 max-w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                   <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                     <input
@@ -1069,32 +1078,37 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                {/* Mobile scroll swipe helper hint */}
+                <div className="sm:hidden flex items-center justify-between text-[11px] text-blue-700 bg-blue-50/80 px-3 py-1.5 rounded-xl border border-blue-100 mb-3 font-medium">
+                  <span>&larr; Swipe horizontally to view all columns &rarr;</span>
+                </div>
+
+                <div className="overflow-x-auto w-full max-w-full touch-pan-x pb-2">
+                  <table className="w-full text-left text-xs whitespace-nowrap min-w-[1100px] border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <th className="p-3.5">Guest Name</th>
-                        <th className="p-3.5">Status</th>
-                        <th className="p-3.5">Seats</th>
-                        <th className="p-3.5">Member Breakdown</th>
-                        <th className="p-3.5">Table</th>
-                        <th className="p-3.5">Contact</th>
-                        <th className="p-3.5 text-right">Actions</th>
+                      <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <th className="p-3.5 whitespace-nowrap min-w-[240px]">Guest Name</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[130px]">Status</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[80px]">Seats</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[340px]">Member Breakdown</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[160px]">Table</th>
+                        <th className="p-3.5 whitespace-nowrap min-w-[220px]">Contact</th>
+                        <th className="p-3.5 text-right whitespace-nowrap min-w-[100px]">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {paginatedRsvps.map((rsvp) => (
                         <tr key={rsvp.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="p-3.5">
-                            <p className="font-serif-title font-bold text-sm text-[#1b3b5f]">
+                          <td className="p-3.5 whitespace-nowrap min-w-[240px]">
+                            <p className="font-serif-title font-bold text-sm text-[#1b3b5f] whitespace-nowrap">
                               {rsvp.fullName}
                             </p>
-                            <span className="text-[10px] text-slate-400">{rsvp.submittedAt}</span>
+                            <span className="text-[10px] text-slate-400 whitespace-nowrap">{rsvp.submittedAt}</span>
                           </td>
-                          <td className="p-3.5">
+                          <td className="p-3.5 whitespace-nowrap min-w-[130px]">
                             <button
                               onClick={() => handleToggleStatus(rsvp.id, rsvp.status)}
-                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all whitespace-nowrap inline-flex items-center ${
                                 rsvp.status === "attending"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : "bg-rose-100 text-rose-800"
@@ -1103,16 +1117,16 @@ export default function AdminPage() {
                               {rsvp.status === "attending" ? "Confirmed" : "Declined"}
                             </button>
                           </td>
-                          <td className="p-3.5 font-bold text-slate-700">
+                          <td className="p-3.5 font-bold text-slate-700 whitespace-nowrap min-w-[80px]">
                             {rsvp.guestCount || 1}
                           </td>
-                          <td className="p-3.5">
+                          <td className="p-3.5 whitespace-nowrap min-w-[340px]">
                             {rsvp.memberBreakdown && rsvp.memberBreakdown.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
+                              <div className="flex items-center gap-1 whitespace-nowrap flex-nowrap">
                                 {rsvp.memberBreakdown.map((m, idx) => (
                                   <span
                                     key={idx}
-                                    className={`px-2 py-0.5 rounded-full text-[9px] font-medium ${
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-medium whitespace-nowrap shrink-0 inline-flex items-center ${
                                       m.isAttending
                                         ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                         : "bg-slate-100 text-slate-600 border border-slate-200"
@@ -1123,22 +1137,24 @@ export default function AdminPage() {
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-slate-400 text-[11px]">—</span>
+                              <span className="text-slate-400 text-[11px] whitespace-nowrap">—</span>
                             )}
                           </td>
-                          <td className="p-3.5">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">
+                          <td className="p-3.5 whitespace-nowrap min-w-[160px]">
+                            <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-900 text-[10px] font-semibold border border-blue-100 whitespace-nowrap inline-block">
                               {rsvp.tableNumber || "Unassigned"}
                             </span>
                           </td>
-                          <td className="p-3.5 text-[11px] text-slate-500">
-                            {rsvp.phone && <p>{rsvp.phone}</p>}
-                            {rsvp.email && <p className="text-slate-400">{rsvp.email}</p>}
+                          <td className="p-3.5 text-[11px] text-slate-500 whitespace-nowrap min-w-[220px]">
+                            <div className="space-y-0.5 whitespace-nowrap">
+                              {rsvp.phone && <p className="whitespace-nowrap font-mono text-slate-700">{rsvp.phone}</p>}
+                              {rsvp.email && <p className="text-slate-400 whitespace-nowrap">{rsvp.email}</p>}
+                            </div>
                           </td>
-                          <td className="p-3.5 text-right space-x-1.5">
+                          <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap min-w-[100px]">
                             <button
                               onClick={() => handleDeleteRsvp(rsvp.id, rsvp.fullName)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors inline-flex"
                               title="Delete RSVP"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

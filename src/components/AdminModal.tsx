@@ -140,45 +140,45 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
 
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
+              <table className="w-full text-left text-xs text-slate-700 whitespace-nowrap min-w-[850px]">
                 <thead className="bg-slate-50 text-[11px] uppercase font-bold text-[#1b3b5f] border-b border-slate-200">
                   <tr>
-                    <th className="p-3">Guest Name</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Seats</th>
-                    <th className="p-3">Companions</th>
-                    <th className="p-3">Contact</th>
-                    <th className="p-3">Special Message</th>
+                    <th className="p-3 whitespace-nowrap">Guest Name</th>
+                    <th className="p-3 whitespace-nowrap">Status</th>
+                    <th className="p-3 whitespace-nowrap">Seats</th>
+                    <th className="p-3 whitespace-nowrap">Companions</th>
+                    <th className="p-3 whitespace-nowrap">Contact</th>
+                    <th className="p-3 whitespace-nowrap">Special Message</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {rsvps.map((r) => (
                     <tr key={r.id} className="hover:bg-blue-50/40">
-                      <td className="p-3 font-semibold text-[#1b3b5f]">{r.fullName}</td>
-                      <td className="p-3">
+                      <td className="p-3 font-semibold text-[#1b3b5f] whitespace-nowrap">{r.fullName}</td>
+                      <td className="p-3 whitespace-nowrap">
                         {r.status === "attending" ? (
-                           <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                           <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] whitespace-nowrap inline-block">
                             Attending
                           </span>
                         ) : (
-                          <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px] whitespace-nowrap inline-block">
                             Declined
                           </span>
                         )}
                       </td>
-                      <td className="p-3 font-bold text-[#1b3b5f]">{r.guestCount || 1}</td>
-                      <td className="p-3 text-slate-500">{r.companionNames || "-"}</td>
-                      <td className="p-3">
-                        <p>{r.email}</p>
-                        <p className="text-slate-400 font-mono text-[10px]">{r.phone}</p>
+                      <td className="p-3 font-bold text-[#1b3b5f] whitespace-nowrap">{r.guestCount || 1}</td>
+                      <td className="p-3 text-slate-500 whitespace-nowrap">{r.companionNames || "-"}</td>
+                      <td className="p-3 whitespace-nowrap">
+                        <p className="whitespace-nowrap">{r.email}</p>
+                        <p className="text-slate-400 font-mono text-[10px] whitespace-nowrap">{r.phone}</p>
                       </td>
-                      <td className="p-3 max-w-xs">
+                      <td className="p-3 max-w-xs whitespace-nowrap">
                         {r.message ? (
-                          <p className="text-[11px] text-slate-500 italic truncate">
+                          <p className="text-[11px] text-slate-500 italic whitespace-nowrap">
                             &ldquo;{r.message}&rdquo;
                           </p>
                         ) : (
-                          <span className="text-slate-400">-</span>
+                          <span className="text-slate-400 whitespace-nowrap">-</span>
                         )}
                       </td>
                     </tr>

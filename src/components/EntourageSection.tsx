@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Users, Heart, Sparkles } from "lucide-react";
+import { Users, Heart, Sparkles, ChevronDown } from "lucide-react";
 import { weddingStore, EntourageCategory } from "@/lib/weddingStore";
 
 export const EntourageSection: React.FC = () => {
@@ -49,7 +49,7 @@ export const EntourageSection: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.3 }}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-2xl mx-auto mb-10"
+          className="text-center max-w-2xl mx-auto mb-8 sm:mb-10"
         >
           {/* Floral Header Banner */}
           <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
@@ -73,8 +73,28 @@ export const EntourageSection: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Category Navigation Tabs */}
-        <div className="flex items-center justify-center flex-wrap gap-2 mb-8">
+        {/* Mobile Dropdown Category Selection */}
+        <div className="sm:hidden mb-6 max-w-xs mx-auto">
+          <div className="relative">
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(Number(e.target.value))}
+              className="w-full appearance-none bg-white text-[#1b3b5f] font-serif-title font-bold text-xs px-4 py-3 pr-10 rounded-2xl border-2 border-blue-200 shadow-md focus:outline-none focus:border-[#1b3b5f] text-center cursor-pointer transition-all"
+            >
+              {entourage.map((cat, idx) => (
+                <option key={cat.id || cat.category} value={idx}>
+                  {cat.category}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-[#1b3b5f]">
+              <ChevronDown className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop & Tablet Category Navigation Tabs */}
+        <div className="hidden sm:flex items-center justify-center flex-wrap gap-2 mb-8">
           {entourage.map((cat, idx) => (
             <button
               key={cat.id || cat.category}
@@ -97,27 +117,24 @@ export const EntourageSection: React.FC = () => {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="glass-card rounded-3xl p-6 sm:p-10 border border-blue-100 shadow-xl max-w-4xl mx-auto"
+            className="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-10 border border-blue-100 shadow-xl max-w-4xl mx-auto"
           >
-            <div className="text-center mb-6 pb-3 border-b border-blue-100 flex flex-col items-center">
-              <span className="text-[11px] uppercase tracking-[0.25em] text-[#7094b7] font-bold">
-                Category Showcase
-              </span>
-              <h3 className="font-serif-title text-xl sm:text-2xl font-bold text-[#1b3b5f]">
+            <div className="text-center mb-5 sm:mb-6 pb-3 border-b border-blue-100 flex flex-col items-center">
+              <h3 className="font-serif-title text-lg sm:text-2xl font-bold text-[#1b3b5f]">
                 {entourage[activeTab].category}
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
               {entourage[activeTab].members.map((member) => (
                 <div
                   key={member.id}
-                  className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-white via-blue-50/40 to-white border border-blue-100 shadow-xs hover:border-blue-300 transition-all flex flex-col justify-center text-center group"
+                  className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white via-blue-50/40 to-white border border-blue-100 shadow-2xs hover:border-blue-300 transition-all flex flex-col justify-center text-center group"
                 >
-                  <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-[#7094b7] font-semibold mb-1 group-hover:text-blue-800 transition-colors">
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#7094b7] font-semibold mb-0.5 group-hover:text-blue-800 transition-colors">
                     {member.role}
                   </p>
-                  <p className="font-serif-title text-sm sm:text-base font-bold text-[#1b3b5f]">
+                  <p className="font-serif-title text-xs sm:text-sm font-bold text-[#1b3b5f] leading-snug">
                     {member.name}
                   </p>
                 </div>
