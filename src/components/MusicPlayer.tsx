@@ -3,19 +3,31 @@
 import React, { useState, useEffect } from "react";
 import { Music, Volume2, VolumeX, Play, Pause, Disc, ExternalLink } from "lucide-react";
 import { weddingMusic } from "@/lib/youtubeAudio";
+import { weddingStore, CoupleInfo, getInitialCoupleInfo } from "@/lib/weddingStore";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const MusicPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
 
   useEffect(() => {
+    setCoupleInfo(weddingStore.getCoupleInfo());
+    const handleCoupleUpdate = () => {
+      setCoupleInfo(weddingStore.getCoupleInfo());
+    };
+    window.addEventListener("wedding_couple_updated", handleCoupleUpdate);
+
     const unsubscribe = weddingMusic.subscribe((state) => {
       setIsPlaying(state.isPlaying);
       setIsMuted(state.isMuted);
     });
-    return () => unsubscribe();
+
+    return () => {
+      window.removeEventListener("wedding_couple_updated", handleCoupleUpdate);
+      unsubscribe();
+    };
   }, []);
 
   const togglePlayback = () => {
@@ -54,7 +66,7 @@ export const MusicPlayer: React.FC = () => {
               Now Playing
             </span>
             <span className="text-xs font-medium text-white truncate max-w-[130px]">
-              {isPlaying ? "Dear Biyenan" : "Music Paused"}
+              {isPlaying ? (coupleInfo.bgMusicTitle || "Dear Biyenan") : "Music Paused"}
             </span>
           </div>
 
@@ -108,7 +120,7 @@ export const MusicPlayer: React.FC = () => {
                 </span>
               </div>
               <a
-                href="https://www.youtube.com/watch?v=5e_KM3SuBjE"
+                href={coupleInfo.bgMusicYoutubeUrl || "https://www.youtube.com/watch?v=5e_KM3SuBjE"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[10px] text-amber-300 hover:text-amber-200 flex items-center gap-1"
@@ -120,13 +132,13 @@ export const MusicPlayer: React.FC = () => {
             </div>
 
             <p className="text-sm font-serif-title font-bold text-white mb-0.5">
-              Dear Biyenan
+              {coupleInfo.bgMusicTitle || "Dear Biyenan"}
             </p>
             <p className="text-[11px] text-amber-200/90 font-medium mb-1">
-              Breezy Boys &bull; JE Beats
+              {coupleInfo.bgMusicArtist || "Breezy Boys • JE Beats"}
             </p>
             <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
-              Special wedding soundtrack dedicated to Aian &amp; Dang&apos;s holy matrimony.
+              Special wedding soundtrack dedicated to {coupleInfo.groomNickname || "Aian"} &amp; {coupleInfo.brideNickname || "Dang"}&apos;s holy matrimony.
             </p>
 
             <div className="flex items-center justify-between pt-2 border-t border-blue-800/60">

@@ -5,6 +5,8 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Heart, MessageSquare, Send, User } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useSiteImages } from "@/hooks/useSiteImages";
+import swalAlert from "@/lib/swal";
 
 interface Wish {
   id: string;
@@ -17,6 +19,7 @@ interface Wish {
 
 export const WishesGuestbookSection: React.FC = () => {
   const [wishes, setWishes] = useState<Wish[]>([]);
+  const siteImages = useSiteImages();
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("");
   const [message, setMessage] = useState("");
@@ -45,7 +48,13 @@ export const WishesGuestbookSection: React.FC = () => {
 
   const handlePostWish = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !message.trim()) return;
+    if (!name.trim() || !message.trim()) {
+      swalAlert.error(
+        "Incomplete Blessing",
+        "Please enter your name and a heartfelt message for the wedding couple."
+      );
+      return;
+    }
 
     const newWish: Wish = {
       id: "w-" + Date.now(),
@@ -74,6 +83,11 @@ export const WishesGuestbookSection: React.FC = () => {
     } catch {
       // ignore
     }
+
+    swalAlert.toastSuccess(
+      "Blessing Shared!",
+      "Thank you for sharing your warm wishes with Aian & Dang!"
+    );
   };
 
   const handleLike = (id: string) => {
@@ -85,24 +99,27 @@ export const WishesGuestbookSection: React.FC = () => {
     setWishes(updated);
     setLikedIds({ ...likedIds, [id]: true });
     localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(updated));
+    swalAlert.toastSuccess("Heart Sent!", "Thank you for spreading the love.");
   };
 
   return (
-    <section id="wishes" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
+    <section id="wishes" className="pt-8 sm:pt-10 pb-6 sm:pb-8 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute top-0 -right-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
       <div className="absolute bottom-0 -left-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0 rotate-180">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
@@ -119,9 +136,10 @@ export const WishesGuestbookSection: React.FC = () => {
           {/* Floral Header Banner */}
           <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
-              src="/images/floral-divider.jpg"
+              src={siteImages.floralDivider}
               alt="Dusty Blue Floral Header"
               fill
+              unoptimized
               className="object-contain mix-blend-multiply"
             />
           </div>

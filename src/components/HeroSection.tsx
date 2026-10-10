@@ -5,8 +5,12 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, ChevronDown } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
+import { weddingStore, CoupleInfo, getInitialCoupleInfo } from "@/lib/weddingStore";
+import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const HeroSection: React.FC = () => {
+  const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
+  const siteImages = useSiteImages();
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -15,6 +19,12 @@ export const HeroSection: React.FC = () => {
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
+    setCoupleInfo(weddingStore.getCoupleInfo());
+    const handleCoupleUpdate = () => {
+      setCoupleInfo(weddingStore.getCoupleInfo());
+    };
+    window.addEventListener("wedding_couple_updated", handleCoupleUpdate);
+
     const targetDate = new Date("2026-12-12T15:00:00+08:00").getTime();
 
     const updateCountdown = () => {
@@ -35,7 +45,10 @@ export const HeroSection: React.FC = () => {
 
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("wedding_couple_updated", handleCoupleUpdate);
+    };
   }, []);
 
   return (
@@ -43,15 +56,15 @@ export const HeroSection: React.FC = () => {
       {/* Looping Hero Video Background */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <video
+          key={siteImages.heroVideo}
+          src={siteImages.heroVideo}
           autoPlay
           loop
           muted
           playsInline
-          poster="/images/hero.jpg"
+          poster={siteImages.heroPoster}
           className="w-full h-full object-cover object-center"
-        >
-          <source src="/hero-video.mp4" type="video/mp4" />
-        </video>
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0e1d2f]/75 via-[#0e1d2f]/45 to-[#0e1d2f]/80" />
       </div>
 
@@ -71,9 +84,10 @@ export const HeroSection: React.FC = () => {
             className="mb-2 sm:mb-3 relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-2xl border-2 border-white/60 ring-4 ring-white/20 bg-white"
           >
             <Image
-              src="/images/wedding-logo.png"
-              alt="Aian & Dang Monogram Crest Logo"
+              src={siteImages.logo}
+              alt="Official Wedding Monogram Crest Logo"
               fill
+              unoptimized
               className="object-cover"
               priority
             />
@@ -104,7 +118,7 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.7, delay: 0.4 }}
             className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-bold tracking-wide text-white uppercase drop-shadow-lg mb-1"
           >
-            Aian <span className="font-script text-3xl sm:text-5xl lg:text-6xl text-amber-200 lowercase">&amp;</span> Dang
+            {coupleInfo.groomNickname} <span className="font-script text-3xl sm:text-5xl lg:text-6xl text-amber-200 lowercase">&amp;</span> {coupleInfo.brideNickname}
           </motion.h1>
 
           <motion.p
@@ -113,7 +127,7 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="text-[11px] sm:text-xs font-light tracking-[0.2em] uppercase text-slate-200 mb-3.5 sm:mb-4"
           >
-            Aian Christopher Ramos &amp; Ma. Andrea Santos
+            {coupleInfo.groomName} &amp; {coupleInfo.brideName}
           </motion.p>
 
           {/* Date & Location Pills */}
@@ -125,11 +139,11 @@ export const HeroSection: React.FC = () => {
           >
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs sm:text-sm font-medium tracking-wider">
               <Calendar className="w-3.5 h-3.5 text-amber-300" />
-              <span>Saturday, December 12, 2026</span>
+              <span>{coupleInfo.weddingDate}</span>
             </div>
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs sm:text-sm font-medium tracking-wider">
               <MapPin className="w-3.5 h-3.5 text-amber-300" />
-              <span>Tagaytay, Philippines</span>
+              <span>{coupleInfo.heroLocation || "Tagaytay, Philippines"}</span>
             </div>
           </motion.div>
 
@@ -168,10 +182,10 @@ export const HeroSection: React.FC = () => {
           {/* Scripture */}
           <div className="pt-3 border-t border-white/20 max-w-md mx-auto">
             <p className="font-serif-title italic text-xs sm:text-sm text-slate-200 leading-relaxed">
-              &ldquo;I have found the one whom my soul loves.&rdquo;
+              &ldquo;{coupleInfo.heroVerse || "I have found the one whom my soul loves."}&rdquo;
             </p>
             <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-amber-200/90 mt-0.5 font-semibold">
-              — Song of Solomon 3:4
+              {coupleInfo.heroVerseCitation || "— Song of Solomon 3:4"}
             </p>
           </div>
 

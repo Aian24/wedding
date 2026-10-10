@@ -1,15 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Heart, Mail, ShieldCheck } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
+import { weddingStore, CoupleInfo, getInitialCoupleInfo } from "@/lib/weddingStore";
+import { useSiteImages } from "@/hooks/useSiteImages";
 
 interface FooterProps {
   onReopenEnvelope: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onReopenEnvelope }) => {
+  const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
+  const siteImages = useSiteImages();
+
+  useEffect(() => {
+    setCoupleInfo(weddingStore.getCoupleInfo());
+    const handleCoupleUpdate = () => {
+      setCoupleInfo(weddingStore.getCoupleInfo());
+    };
+    window.addEventListener("wedding_couple_updated", handleCoupleUpdate);
+    return () => window.removeEventListener("wedding_couple_updated", handleCoupleUpdate);
+  }, []);
+
   return (
     <footer className="bg-[#0e1d2f] text-white pt-12 pb-8 px-4 sm:px-6 lg:px-8 border-t border-blue-900/60 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -19,9 +33,10 @@ export const Footer: React.FC<FooterProps> = ({ onReopenEnvelope }) => {
       <div className="max-w-4xl mx-auto text-center relative z-10">
         <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden mx-auto mb-4 shadow-2xl border-2 border-amber-200/80 ring-4 ring-white/10 bg-white">
           <Image
-            src="/images/wedding-logo.png"
-            alt="Aian & Dang Monogram Crest"
+            src={siteImages.logo}
+            alt="Official Wedding Monogram Crest Logo"
             fill
+            unoptimized
             className="object-cover"
           />
         </div>
@@ -31,17 +46,17 @@ export const Footer: React.FC<FooterProps> = ({ onReopenEnvelope }) => {
         </p>
 
         <h3 className="font-serif-title text-2xl sm:text-3xl font-bold tracking-widest text-white uppercase mb-2">
-          Aian &amp; Dang
+          {coupleInfo.groomNickname} &amp; {coupleInfo.brideNickname}
         </h3>
 
         <p className="text-xs uppercase tracking-[0.3em] text-blue-300 font-semibold mb-6">
-          {weddingData.hashtag}
+          {coupleInfo.hashtag}
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold uppercase tracking-wider text-slate-300 mb-10">
           <button
             onClick={onReopenEnvelope}
-            className="hover:text-amber-200 transition-colors flex items-center gap-1.5"
+            className="hover:text-amber-200 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <Mail className="w-3.5 h-3.5 text-[#7094b7]" />
             <span>Invitation Cover</span>
@@ -58,33 +73,27 @@ export const Footer: React.FC<FooterProps> = ({ onReopenEnvelope }) => {
           <a href="#rsvp" className="hover:text-amber-200 transition-colors text-amber-300 font-bold">
             RSVP
           </a>
-          <span>&bull;</span>
-          <a href="/admin" className="hover:text-amber-200 transition-colors text-slate-400">
-            Admin Portal
-          </a>
         </div>
 
         <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-200/40 to-transparent mx-auto mb-8" />
 
         <p className="font-serif-title italic text-xs text-slate-400 max-w-lg mx-auto leading-relaxed mb-8">
-          &ldquo;Love is patient, love is kind. It does not envy, it does not boast, it is not proud... It always protects, always trusts, always hopes, always perseveres. Love never fails.&rdquo;
+          &ldquo;{coupleInfo.footerVerse || "Love is patient, love is kind. It does not envy, it does not boast, it is not proud... It always protects, always trusts, always hopes, always perseveres. Love never fails."}&rdquo;
           <span className="block not-italic text-[10px] uppercase tracking-widest text-amber-200/80 mt-1">
-            — 1 Corinthians 13:4-8
+            {coupleInfo.footerVerseCitation || "— 1 Corinthians 13:4-8"}
           </span>
         </p>
 
-        <div className="pt-6 border-t border-blue-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
-          <p className="flex items-center gap-1">
-            Made with <Heart className="w-3 h-3 text-rose-500 fill-rose-500 inline" /> for Aian Christopher &amp; Ma. Andrea &bull; 2026
+        <div className="pt-6 border-t border-blue-900/50 flex flex-col items-center justify-center gap-3 text-[11px] text-slate-400">
+          <p className="flex items-center gap-1 text-center">
+            {coupleInfo.footerCredit ? (
+              <span>{coupleInfo.footerCredit}</span>
+            ) : (
+              <>
+                Made with <Heart className="w-3 h-3 text-rose-500 fill-rose-500 inline mx-0.5" /> for {coupleInfo.groomNickname || coupleInfo.groomName} &amp; {coupleInfo.brideNickname || coupleInfo.brideName} &bull; 2026
+              </>
+            )}
           </p>
-
-          <a
-            href="/admin"
-            className="hover:text-amber-200 transition-colors flex items-center gap-1 text-slate-400"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Couple / Admin Portal</span>
-          </a>
         </div>
       </div>
     </footer>

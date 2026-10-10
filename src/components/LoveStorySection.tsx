@@ -1,12 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Heart, Calendar, Compass } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
+import { weddingStore, CoupleInfo, getInitialCoupleInfo } from "@/lib/weddingStore";
 
 export const LoveStorySection: React.FC = () => {
+  const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
+
+  useEffect(() => {
+    setCoupleInfo(weddingStore.getCoupleInfo());
+    const handleCoupleUpdate = () => {
+      setCoupleInfo(weddingStore.getCoupleInfo());
+    };
+    window.addEventListener("wedding_couple_updated", handleCoupleUpdate);
+    return () => window.removeEventListener("wedding_couple_updated", handleCoupleUpdate);
+  }, []);
+
   return (
     <section id="story" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#fafbfc] via-[#f1f6fa] to-[#fafbfc] relative overflow-hidden">
       <div className="max-w-6xl mx-auto">
@@ -42,16 +54,16 @@ export const LoveStorySection: React.FC = () => {
             className="glass-card rounded-3xl p-8 text-center relative border border-blue-200/80 shadow-lg hover:shadow-xl transition-all"
           >
             <div className="w-12 h-12 rounded-full bg-[#1b3b5f] text-amber-200 flex items-center justify-center mx-auto mb-4 font-serif-title font-bold text-lg shadow-md border border-amber-200/50">
-              A
+              {coupleInfo.groomNickname.charAt(0)}
             </div>
             <p className="text-xs uppercase tracking-[0.25em] text-[#7094b7] font-semibold mb-1">
               The Groom
             </p>
             <h3 className="font-serif-title text-2xl font-bold text-[#1b3b5f] mb-1">
-              {weddingData.groom.fullName}
+              {coupleInfo.groomName}
             </h3>
             <p className="text-xs text-slate-500 mb-4">
-              Son of {weddingData.groom.parents}
+              Son of {coupleInfo.groomParents}
             </p>
             <p className="text-sm text-slate-600 font-light italic leading-relaxed">
               &ldquo;{weddingData.groom.bio}&rdquo;
@@ -67,16 +79,16 @@ export const LoveStorySection: React.FC = () => {
             className="glass-card rounded-3xl p-8 text-center relative border border-blue-200/80 shadow-lg hover:shadow-xl transition-all"
           >
             <div className="w-12 h-12 rounded-full bg-[#7094b7] text-white flex items-center justify-center mx-auto mb-4 font-serif-title font-bold text-lg shadow-md border border-white/60">
-              D
+              {coupleInfo.brideNickname.charAt(0)}
             </div>
             <p className="text-xs uppercase tracking-[0.25em] text-[#7094b7] font-semibold mb-1">
               The Bride
             </p>
             <h3 className="font-serif-title text-2xl font-bold text-[#1b3b5f] mb-1">
-              {weddingData.bride.fullName}
+              {coupleInfo.brideName}
             </h3>
             <p className="text-xs text-slate-500 mb-4">
-              Daughter of {weddingData.bride.parents}
+              Daughter of {coupleInfo.brideParents}
             </p>
             <p className="text-sm text-slate-600 font-light italic leading-relaxed">
               &ldquo;{weddingData.bride.bio}&rdquo;

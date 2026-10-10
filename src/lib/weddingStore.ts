@@ -79,7 +79,75 @@ export interface GuestbookEntry {
   date: string;
 }
 
+export interface CoupleInfo {
+  groomName: string;
+  groomNickname: string;
+  groomParents: string;
+  brideName: string;
+  brideNickname: string;
+  brideParents: string;
+  weddingDate: string;
+  weddingTime: string;
+  hashtag: string;
+  // Opening Envelope texts
+  envelopeTitle: string;
+  envelopeDate: string;
+  envelopeAction: string;
+  envelopeSubtitle: string;
+
+  // Hero Section
+  heroLocation: string;
+  heroVerse: string;
+  heroVerseCitation: string;
+  countdownIsoDate?: string;
+
+  // Ceremony Venue & Navigation
+  ceremonyName: string;
+  ceremonySubtitle: string;
+  ceremonySchedule: string;
+  ceremonyAddress: string;
+  ceremonyCity: string;
+  ceremonyNotes: string;
+  ceremonyMapsUrl: string;
+  ceremonyWazeUrl: string;
+
+  // Reception Venue & Navigation
+  receptionName: string;
+  receptionSubtitle: string;
+  receptionSchedule: string;
+  receptionAddress: string;
+  receptionCity: string;
+  receptionNotes: string;
+  receptionMapsUrl: string;
+  receptionWazeUrl: string;
+
+  // Footer Scripture & Credits
+  footerVerse: string;
+  footerVerseCitation: string;
+  footerCredit: string;
+
+  // Background Music (YouTube)
+  bgMusicYoutubeUrl: string;
+  bgMusicTitle?: string;
+  bgMusicArtist?: string;
+}
+
+export interface SiteImages {
+  logo: string;
+  heroPoster: string;
+  heroVideo: string;
+  invitationVideo: string;
+  envelopeCover: string;
+  ceremonyVenue: string;
+  receptionVenue: string;
+  ladiesAttire: string;
+  menAttire: string;
+  floralCorner: string;
+  floralDivider: string;
+}
+
 const STORAGE_KEYS = {
+  COUPLE_INFO: "aian_dang_wedding_couple_info",
   ENTOURAGE: "aian_dang_wedding_entourage",
   RSVPS: "aian_dang_wedding_all_rsvps",
   PARTIES: "aian_dang_wedding_invited_parties",
@@ -87,6 +155,77 @@ const STORAGE_KEYS = {
   REGISTRY: "aian_dang_wedding_registry_items",
   GUESTBOOK: "aian_dang_wedding_guestbook",
   ADMIN_AUTH: "aian_dang_admin_session",
+  SITE_IMAGES: "aian_dang_wedding_site_images",
+};
+
+export const getInitialSiteImages = (): SiteImages => {
+  return {
+    logo: "/images/wedding-logo.png",
+    heroPoster: "/images/hero.jpg",
+    heroVideo: "/hero-video.mp4",
+    invitationVideo: "/invitation.mp4",
+    envelopeCover: "/images/envelope-cover.jpg",
+    ceremonyVenue: "/images/ceremony.jpg",
+    receptionVenue: "/images/reception.jpg",
+    ladiesAttire: "/images/sample-dress-ladies.jpg",
+    menAttire: "/images/sample-attire-men.jpg",
+    floralCorner: "/images/floral-corner.jpg",
+    floralDivider: "/images/floral-divider.jpg",
+  };
+};
+
+export const getInitialCoupleInfo = (): CoupleInfo => {
+  return {
+    groomName: defaultData.groom.fullName || "Aian Christopher Ramos",
+    groomNickname: defaultData.groom.nickname || "Aian",
+    groomParents: defaultData.groom.parents || "Mr. Eduardo Ramos & Mrs. Cristina Ramos",
+    brideName: defaultData.bride.fullName || "Ma. Andrea Santos",
+    brideNickname: defaultData.bride.nickname || "Dang",
+    brideParents: defaultData.bride.parents || "Mr. Antonio Santos & Mrs. Evelyn Santos",
+    weddingDate: defaultData.date.fullDate || "Saturday, December 12, 2026",
+    weddingTime: defaultData.date.time || "3:00 PM (PHT)",
+    hashtag: defaultData.hashtag || "#AianGotHisDangGirl",
+    envelopeTitle: "You're Invited",
+    envelopeDate: "12.12.26",
+    envelopeAction: "CLICK TO SEE",
+    envelopeSubtitle: "The Magic...",
+
+    // Hero Section
+    heroLocation: "Tagaytay, Philippines",
+    heroVerse: "I have found the one whom my soul loves.",
+    heroVerseCitation: "— Song of Solomon 3:4",
+    countdownIsoDate: "2026-12-12T15:00:00+08:00",
+
+    // Ceremony Venue & Navigation
+    ceremonyName: defaultData.ceremony.name || "St. Mary's Coastal Cathedral",
+    ceremonySubtitle: defaultData.ceremony.subtitle || "Holy Matrimony & Sacred Vows Exchange",
+    ceremonySchedule: defaultData.ceremony.time || "3:00 PM Sharp (Guests to be seated by 2:30 PM)",
+    ceremonyAddress: defaultData.ceremony.address || "Seaside Boulevard, Oceanview Promenade",
+    ceremonyCity: defaultData.ceremony.city || "Tagaytay / Metro Coastal",
+    ceremonyNotes: defaultData.ceremony.notes || "Please arrive promptly by 2:30 PM to settle in before the processional commences. We respectfully request an unplugged ceremony.",
+    ceremonyMapsUrl: defaultData.ceremony.mapsUrl || "https://maps.google.com/?q=Cathedral+Wedding+Venue",
+    ceremonyWazeUrl: defaultData.ceremony.wazeUrl || "https://waze.com/ul",
+
+    // Reception Venue & Navigation
+    receptionName: defaultData.reception.name || "The Grand Sapphire Pavilion & Ballroom",
+    receptionSubtitle: defaultData.reception.subtitle || "Dinner Banquet, Cocktails & Evening Dancing",
+    receptionSchedule: defaultData.reception.time || "5:30 PM Onwards",
+    receptionAddress: defaultData.reception.address || "Estate Grounds, Royal Garden View",
+    receptionCity: defaultData.reception.city || "Tagaytay / Metro Coastal",
+    receptionNotes: defaultData.reception.notes || "Cocktails and sunset canapés will be served upon arrival at 5:00 PM, followed by the grand entrance and sumptuous dinner banquet.",
+    receptionMapsUrl: defaultData.reception.mapsUrl || "https://maps.google.com/?q=Sapphire+Ballroom+Reception",
+    receptionWazeUrl: defaultData.reception.wazeUrl || "https://waze.com/ul",
+
+    // Footer Scripture & Credits
+    footerVerse: "Love is patient, love is kind. It does not envy, it does not boast, it is not proud... It always protects, always trusts, always hopes, always perseveres. Love never fails.",
+    footerVerseCitation: "— 1 Corinthians 13:4-8",
+    footerCredit: "",
+
+    // Background Music (YouTube)
+    bgMusicYoutubeUrl: "https://www.youtube.com/watch?v=5e_KM3SuBjE",
+    bgMusicTitle: "Dear Biyenan",
+    bgMusicArtist: "Breezy Boys • JE Beats",
+  };
 };
 
 // Initial entourage with unique IDs
@@ -102,129 +241,13 @@ export const getInitialEntourage = (): EntourageCategory[] => {
   }));
 };
 
-// Initial demo RSVPs for immediate visual richness
+// Real guest list starts clean and empty for the couple
 export const getInitialRsvps = (): RsvpEntry[] => {
-  return [
-    {
-      id: "rsvp-1",
-      fullName: "Hon. Roberto Gomez & Dra. Maria Teresa Gomez",
-      email: "mtgomez@gmail.com",
-      phone: "+63 917 555 1234",
-      status: "attending",
-      guestCount: 2,
-      companionNames: "Hon. Roberto Gomez",
-      message: "Looking forward to your blessed wedding day! Congratulations Aian & Dang!",
-      tableNumber: "VIP Table 1 (Ninongs & Ninangs)",
-      submittedAt: "10/08/2026, 10:15 AM",
-    },
-    {
-      id: "rsvp-2",
-      fullName: "Christian Paul Ramos",
-      email: "christian.ramos@gmail.com",
-      phone: "+63 917 888 1122",
-      status: "attending",
-      guestCount: 2,
-      companionNames: "Sofia Mendoza",
-      message: "Can't wait to give my Best Man speech bro! Cheers!",
-      tableNumber: "Table 2 (Entourage)",
-      submittedAt: "10/08/2026, 11:00 AM",
-    },
-    {
-      id: "rsvp-3",
-      fullName: "Katarina Denise Santos",
-      email: "katarina.santos@yahoo.com",
-      phone: "+63 918 222 3344",
-      status: "attending",
-      guestCount: 1,
-      companionNames: "",
-      message: "Sister of the bride is ready! Love you both so much!",
-      tableNumber: "Table 2 (Entourage)",
-      submittedAt: "10/08/2026, 11:45 AM",
-    },
-    {
-      id: "rsvp-4",
-      fullName: "Engr. Manuel Cruz & Mrs. Patricia Cruz",
-      email: "manuel.cruz@engineering.ph",
-      phone: "+63 920 777 9900",
-      status: "attending",
-      guestCount: 2,
-      companionNames: "Mrs. Patricia Cruz",
-      message: "May God grant you a lifetime of peace, prosperity, and endless love.",
-      tableNumber: "VIP Table 1 (Ninongs & Ninangs)",
-      submittedAt: "10/08/2026, 01:20 PM",
-    },
-    {
-      id: "rsvp-5",
-      fullName: "Mark Anthony Lim",
-      email: "mark.lim@gmail.com",
-      phone: "+63 915 333 4455",
-      status: "attending",
-      guestCount: 1,
-      companionNames: "",
-      message: "So hyped for the party! Congrats brother!",
-      tableNumber: "Table 3 (Groomsmen)",
-      submittedAt: "10/08/2026, 02:15 PM",
-    },
-    {
-      id: "rsvp-6",
-      fullName: "Camille Joy Perez",
-      email: "camille.perez@hotmail.com",
-      phone: "+63 919 666 7788",
-      status: "attending",
-      guestCount: 2,
-      companionNames: "David Tan",
-      message: "Bridesmaid duties activated! You will be the most stunning bride Dang!",
-      tableNumber: "Table 4 (Bridesmaids)",
-      submittedAt: "10/08/2026, 03:00 PM",
-    },
-    {
-      id: "rsvp-7",
-      fullName: "Atty. Fernando Rivera & Mrs. Carmela Rivera",
-      email: "frivera.law@gmail.com",
-      phone: "+63 917 444 5566",
-      status: "attending",
-      guestCount: 2,
-      companionNames: "Mrs. Carmela Rivera",
-      message: "Best wishes on your holy matrimony from the Rivera family.",
-      tableNumber: "VIP Table 1 (Ninongs & Ninangs)",
-      submittedAt: "10/08/2026, 04:10 PM",
-    },
-    {
-      id: "rsvp-8",
-      fullName: "Marcus Aurelius Tan",
-      email: "marcustan@outlook.com",
-      phone: "+63 920 111 2233",
-      status: "declined",
-      guestCount: 1,
-      companionNames: "",
-      message: "Sending love from Canada! Wishing you both a lifetime of happiness!",
-      tableNumber: "-",
-      submittedAt: "10/08/2026, 05:30 PM",
-    },
-    {
-      id: "rsvp-9",
-      fullName: "Bea Nicole Flores",
-      email: "bea.flores@gmail.com",
-      phone: "+63 917 999 8811",
-      status: "attending",
-      guestCount: 1,
-      companionNames: "",
-      message: "So thrilled to witness your vows! Love you lots!",
-      tableNumber: "Table 4 (Bridesmaids)",
-      submittedAt: "10/08/2026, 06:20 PM",
-    },
-  ];
+  return [];
 };
 
 export const getInitialParties = (): InvitedParty[] => {
-  return defaultData.invitedParties.map((p) => ({
-    ...p,
-    status: p.members.every((m) => m.isAttending)
-      ? "confirmed"
-      : p.members.some((m) => m.isAttending)
-      ? "confirmed"
-      : "pending",
-  }));
+  return [];
 };
 
 export const getInitialThemeColors = (): ThemeColor[] => {
@@ -243,7 +266,18 @@ export const weddingStore = {
     const saved = localStorage.getItem(STORAGE_KEYS.PARTIES);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: InvitedParty[] = JSON.parse(saved);
+        // If legacy demo parties exist with IDs pty-1, pty-2, or mock demo primary guest, purge them
+        const hasLegacyMock = parsed.some(
+          (p) =>
+            ["pty-1", "pty-2", "pty-3", "pty-4", "pty-5"].includes(p.id) ||
+            (p.primaryGuest && p.primaryGuest.toLowerCase().includes("roberto gomez"))
+        );
+        if (hasLegacyMock) {
+          localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify([]));
+          return [];
+        }
+        return parsed;
       } catch {
         return getInitialParties();
       }
@@ -341,6 +375,62 @@ export const weddingStore = {
     this.saveThemeColors(updated);
   },
 
+  // Couple & Wedding Ceremony Information
+  getCoupleInfo(): CoupleInfo {
+    if (typeof window === "undefined") return getInitialCoupleInfo();
+    const saved = localStorage.getItem(STORAGE_KEYS.COUPLE_INFO);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const defaults = getInitialCoupleInfo();
+        return {
+          ...defaults,
+          ...parsed,
+          envelopeTitle: parsed.envelopeTitle || defaults.envelopeTitle,
+          envelopeDate: parsed.envelopeDate || defaults.envelopeDate,
+          envelopeAction: parsed.envelopeAction || defaults.envelopeAction,
+          envelopeSubtitle: parsed.envelopeSubtitle || defaults.envelopeSubtitle,
+          heroLocation: parsed.heroLocation || defaults.heroLocation,
+          heroVerse: parsed.heroVerse || defaults.heroVerse,
+          heroVerseCitation: parsed.heroVerseCitation || defaults.heroVerseCitation,
+          ceremonyName: parsed.ceremonyName || defaults.ceremonyName,
+          ceremonySubtitle: parsed.ceremonySubtitle || defaults.ceremonySubtitle,
+          ceremonySchedule: parsed.ceremonySchedule || defaults.ceremonySchedule,
+          ceremonyAddress: parsed.ceremonyAddress || defaults.ceremonyAddress,
+          ceremonyCity: parsed.ceremonyCity || defaults.ceremonyCity,
+          ceremonyNotes: parsed.ceremonyNotes || defaults.ceremonyNotes,
+          ceremonyMapsUrl: parsed.ceremonyMapsUrl || defaults.ceremonyMapsUrl,
+          ceremonyWazeUrl: parsed.ceremonyWazeUrl || defaults.ceremonyWazeUrl,
+          receptionName: parsed.receptionName || defaults.receptionName,
+          receptionSubtitle: parsed.receptionSubtitle || defaults.receptionSubtitle,
+          receptionSchedule: parsed.receptionSchedule || defaults.receptionSchedule,
+          receptionAddress: parsed.receptionAddress || defaults.receptionAddress,
+          receptionCity: parsed.receptionCity || defaults.receptionCity,
+          receptionNotes: parsed.receptionNotes || defaults.receptionNotes,
+          receptionMapsUrl: parsed.receptionMapsUrl || defaults.receptionMapsUrl,
+          receptionWazeUrl: parsed.receptionWazeUrl || defaults.receptionWazeUrl,
+          footerVerse: parsed.footerVerse || defaults.footerVerse,
+          footerVerseCitation: parsed.footerVerseCitation || defaults.footerVerseCitation,
+          footerCredit: parsed.footerCredit ?? defaults.footerCredit,
+          bgMusicYoutubeUrl: parsed.bgMusicYoutubeUrl || defaults.bgMusicYoutubeUrl,
+          bgMusicTitle: parsed.bgMusicTitle || defaults.bgMusicTitle,
+          bgMusicArtist: parsed.bgMusicArtist || defaults.bgMusicArtist,
+        };
+      } catch {
+        return getInitialCoupleInfo();
+      }
+    }
+    const init = getInitialCoupleInfo();
+    localStorage.setItem(STORAGE_KEYS.COUPLE_INFO, JSON.stringify(init));
+    return init;
+  },
+
+  saveCoupleInfo(info: CoupleInfo) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEYS.COUPLE_INFO, JSON.stringify(info));
+    window.dispatchEvent(new Event("wedding_couple_updated"));
+  },
+
   // Entourage
   getEntourage(): EntourageCategory[] {
     if (typeof window === "undefined") return getInitialEntourage();
@@ -363,13 +453,70 @@ export const weddingStore = {
     window.dispatchEvent(new Event("wedding_entourage_updated"));
   },
 
+  addEntourageMember(categoryIndex: number, member: { role: string; name: string }): EntourageMember | null {
+    const list = this.getEntourage();
+    if (!list[categoryIndex]) return null;
+    const newMember: EntourageMember = {
+      id: `m-${categoryIndex}-${Date.now()}`,
+      role: member.role.trim(),
+      name: member.name.trim(),
+    };
+    list[categoryIndex].members.push(newMember);
+    this.saveEntourage(list);
+    return newMember;
+  },
+
+  updateEntourageMember(categoryIndex: number, memberId: string, updates: { role: string; name: string }) {
+    const list = this.getEntourage();
+    if (!list[categoryIndex]) return;
+    list[categoryIndex].members = list[categoryIndex].members.map((m) =>
+      m.id === memberId
+        ? { ...m, role: updates.role.trim(), name: updates.name.trim() }
+        : m
+    );
+    this.saveEntourage(list);
+  },
+
+  deleteEntourageMember(categoryIndex: number, memberId: string) {
+    const list = this.getEntourage();
+    if (!list[categoryIndex]) return;
+    list[categoryIndex].members = list[categoryIndex].members.filter((m) => m.id !== memberId);
+    this.saveEntourage(list);
+  },
+
+  addEntourageCategory(categoryName: string) {
+    const list = this.getEntourage();
+    list.push({
+      id: "cat-" + Date.now(),
+      category: categoryName.trim(),
+      members: [],
+    });
+    this.saveEntourage(list);
+  },
+
+  // Clear demo / test data helper
+  clearAllGuestData() {
+    this.saveParties([]);
+    this.saveRsvps([]);
+  },
+
   // RSVPs
   getRsvps(): RsvpEntry[] {
     if (typeof window === "undefined") return getInitialRsvps();
     const saved = localStorage.getItem(STORAGE_KEYS.RSVPS);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: RsvpEntry[] = JSON.parse(saved);
+        const hasLegacyMock = parsed.some(
+          (r) =>
+            ["rsvp-1", "rsvp-2"].includes(r.id) ||
+            (r.fullName && r.fullName.toLowerCase().includes("roberto gomez"))
+        );
+        if (hasLegacyMock) {
+          localStorage.setItem(STORAGE_KEYS.RSVPS, JSON.stringify([]));
+          return [];
+        }
+        return parsed;
       } catch {
         return getInitialRsvps();
       }
@@ -471,5 +618,42 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
     sessionStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
+  },
+
+  // Site Images & Media Assets
+  getSiteImages(): SiteImages {
+    if (typeof window === "undefined") return getInitialSiteImages();
+    const saved = localStorage.getItem(STORAGE_KEYS.SITE_IMAGES);
+    if (saved) {
+      try {
+        return { ...getInitialSiteImages(), ...JSON.parse(saved) };
+      } catch {
+        return getInitialSiteImages();
+      }
+    }
+    const init = getInitialSiteImages();
+    localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(init));
+    return init;
+  },
+
+  saveSiteImages(images: SiteImages) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(images));
+    window.dispatchEvent(new Event("wedding_images_updated"));
+  },
+
+  updateSiteImage(key: keyof SiteImages, url: string) {
+    const current = this.getSiteImages();
+    current[key] = url;
+    this.saveSiteImages(current);
+  },
+
+  resetSiteImage(key: keyof SiteImages) {
+    const defaults = getInitialSiteImages();
+    this.updateSiteImage(key, defaults[key]);
+  },
+
+  resetAllSiteImages() {
+    this.saveSiteImages(getInitialSiteImages());
   },
 };

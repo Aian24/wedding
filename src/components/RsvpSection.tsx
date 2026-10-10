@@ -15,13 +15,15 @@ import {
   Search,
   Check,
   UserPlus,
-  Sparkles,
   Info,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { weddingStore, RsvpEntry, InvitedParty, PartyMember } from "@/lib/weddingStore";
+import { useSiteImages } from "@/hooks/useSiteImages";
+import swalAlert from "@/lib/swal";
 
 export const RsvpSection: React.FC = () => {
+  const siteImages = useSiteImages();
   const [searchTerm, setSearchTerm] = useState("");
   const [matchingParties, setMatchingParties] = useState<InvitedParty[]>([]);
   const [selectedParty, setSelectedParty] = useState<InvitedParty | null>(null);
@@ -201,28 +203,45 @@ export const RsvpSection: React.FC = () => {
     } catch {
       // ignore
     }
+
+    swalAlert.success(
+      "RSVP Response Submitted!",
+      `Thank you, ${rsvpPayload.fullName}! Your wedding attendance details have been officially recorded.`
+    );
   };
 
-  const handleEditRsvp = () => {
-    setIsSubmitted(false);
+  const handleEditRsvp = async () => {
+    const confirmed = await swalAlert.confirm({
+      title: "Modify Your RSVP?",
+      text: "Would you like to unlock and update your RSVP response details?",
+      confirmButtonText: "Yes, Edit Response",
+      cancelButtonText: "Keep Current Response",
+      icon: "question",
+    });
+    if (confirmed) {
+      setIsSubmitted(false);
+      swalAlert.toastSuccess("Editing Unlocked", "You can now adjust your seats and guest names.");
+    }
   };
 
   return (
-    <section id="rsvp" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#fafbfc] via-[#f1f6fa] to-[#0e1d2f] relative text-slate-900 overflow-hidden">
+    <section id="rsvp" className="pt-6 sm:pt-8 pb-14 sm:pb-18 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#fafbfc] via-[#f1f6fa] to-[#0e1d2f] relative text-slate-900 overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute top-0 -right-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
       <div className="absolute bottom-1/4 -left-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0 rotate-180">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
@@ -234,14 +253,15 @@ export const RsvpSection: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.3 }}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-2xl mx-auto mb-10"
+          className="text-center max-w-2xl mx-auto mb-6 sm:mb-8"
         >
           {/* Floral Header Banner */}
           <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
-              src="/images/floral-divider.jpg"
+              src={siteImages.floralDivider}
               alt="Dusty Blue Floral Header"
               fill
+              unoptimized
               className="object-contain mix-blend-multiply"
             />
           </div>
@@ -273,9 +293,10 @@ export const RsvpSection: React.FC = () => {
               <div className="flex justify-center -mt-2 mb-2">
                 <div className="relative w-14 h-14 rounded-full overflow-hidden shadow-md border-2 border-amber-200/80 bg-white">
                   <Image
-                    src="/images/wedding-logo.png"
-                    alt="Aian & Dang Monogram"
+                    src={siteImages.logo}
+                    alt="Aian &amp; Dang Monogram"
                     fill
+                    unoptimized
                     className="object-cover"
                   />
                 </div>
@@ -469,7 +490,7 @@ export const RsvpSection: React.FC = () => {
                       className="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1b3b5f] text-xs font-semibold flex items-center gap-1.5 transition-colors"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>+ Add Another Companion</span>
+                      <span>Add Another Companion</span>
                     </button>
                   )}
                 </motion.div>

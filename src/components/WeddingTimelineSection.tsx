@@ -15,8 +15,10 @@ import {
   Heart,
 } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
+import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const WeddingTimelineSection: React.FC = () => {
+  const siteImages = useSiteImages();
   const getIcon = (iconName: string) => {
     const props = { className: "w-5 h-5 text-amber-200" };
     switch (iconName) {
@@ -40,21 +42,23 @@ export const WeddingTimelineSection: React.FC = () => {
   };
 
   return (
-    <section id="timeline" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#fafbfc] via-[#eef5fb] to-[#fafbfc] relative overflow-hidden">
+    <section id="timeline" className="pt-8 sm:pt-10 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#fafbfc] via-[#eef5fb] to-[#fafbfc] relative overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute top-1/4 -right-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
       <div className="absolute bottom-1/4 -left-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0 rotate-180">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
@@ -71,9 +75,10 @@ export const WeddingTimelineSection: React.FC = () => {
           {/* Floral Header Banner */}
           <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
-              src="/images/floral-divider.jpg"
+              src={siteImages.floralDivider}
               alt="Dusty Blue Floral Header"
               fill
+              unoptimized
               className="object-contain mix-blend-multiply"
             />
           </div>

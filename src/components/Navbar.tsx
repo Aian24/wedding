@@ -3,21 +3,34 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X, Mail, UserCheck, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { weddingStore, CoupleInfo, getInitialCoupleInfo } from "@/lib/weddingStore";
+import { useSiteImages } from "@/hooks/useSiteImages";
 
 interface NavbarProps {
   onReopenEnvelope: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onReopenEnvelope }) => {
+  const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
+  const siteImages = useSiteImages();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    setCoupleInfo(weddingStore.getCoupleInfo());
+    const handleCoupleUpdate = () => {
+      setCoupleInfo(weddingStore.getCoupleInfo());
+    };
+    window.addEventListener("wedding_couple_updated", handleCoupleUpdate);
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
     };
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("wedding_couple_updated", handleCoupleUpdate);
+    };
   }, []);
 
   const navLinks = [
@@ -54,20 +67,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onReopenEnvelope }) => {
           className="flex items-center gap-2.5 group cursor-pointer shrink-0 whitespace-nowrap"
         >
           <div
-            className={`w-9 h-9 rounded-full flex items-center justify-center font-serif-title font-bold text-xs tracking-wider shadow-md transition-all duration-300 border ${
+            className={`w-9 h-9 rounded-full overflow-hidden flex items-center justify-center font-serif-title font-bold text-xs tracking-wider shadow-md transition-all duration-300 border relative ${
               scrolled
                 ? "bg-[#1b3b5f] text-white border-blue-200"
                 : "bg-white/20 backdrop-blur-md text-amber-200 border-amber-200/60 group-hover:bg-white/30"
             }`}
           >
-            A&amp;D
+            {siteImages.logo ? (
+              <img
+                src={siteImages.logo}
+                alt="Logo"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{coupleInfo.groomNickname.charAt(0)}&amp;{coupleInfo.brideNickname.charAt(0)}</span>
+            )}
           </div>
           <span
             className={`font-serif-title text-sm sm:text-base font-bold tracking-widest uppercase transition-colors whitespace-nowrap ${
               scrolled ? "text-[#1b3b5f]" : "text-white drop-shadow-sm"
             }`}
           >
-            Aian &amp; Dang
+            {coupleInfo.groomNickname} &amp; {coupleInfo.brideNickname}
           </span>
         </a>
 

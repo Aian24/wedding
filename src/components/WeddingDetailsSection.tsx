@@ -1,14 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { MapPin, Clock, Navigation, ExternalLink, Copy, Check, Church, Utensils } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
+import { weddingStore, CoupleInfo, getInitialCoupleInfo } from "@/lib/weddingStore";
+import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const WeddingDetailsSection: React.FC = () => {
   const [copiedCeremony, setCopiedCeremony] = useState(false);
   const [copiedReception, setCopiedReception] = useState(false);
+  const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
+  const siteImages = useSiteImages();
+
+  useEffect(() => {
+    setCoupleInfo(weddingStore.getCoupleInfo());
+    const handleCoupleUpdate = () => {
+      setCoupleInfo(weddingStore.getCoupleInfo());
+    };
+    window.addEventListener("wedding_couple_updated", handleCoupleUpdate);
+    return () => window.removeEventListener("wedding_couple_updated", handleCoupleUpdate);
+  }, []);
 
   const copyToClipboard = (text: string, isCeremony: boolean) => {
     navigator.clipboard.writeText(text);
@@ -22,21 +35,23 @@ export const WeddingDetailsSection: React.FC = () => {
   };
 
   return (
-    <section id="details" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
+    <section id="details" className="pt-10 sm:pt-14 pb-6 sm:pb-8 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute -top-10 -right-10 w-44 sm:w-64 h-44 sm:h-64 pointer-events-none opacity-20 sm:opacity-25 mix-blend-multiply z-0">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
       <div className="absolute -bottom-10 -left-10 w-44 sm:w-64 h-44 sm:h-64 pointer-events-none opacity-20 sm:opacity-25 mix-blend-multiply z-0 rotate-180">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
@@ -47,9 +62,10 @@ export const WeddingDetailsSection: React.FC = () => {
           {/* Floral Header Banner */}
           <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
-              src="/images/floral-divider.jpg"
+              src={siteImages.floralDivider}
               alt="Dusty Blue Floral Header"
               fill
+              unoptimized
               className="object-contain mix-blend-multiply"
             />
           </div>
@@ -79,9 +95,10 @@ export const WeddingDetailsSection: React.FC = () => {
             {/* Image Banner */}
             <div className="relative h-64 sm:h-72 w-full overflow-hidden">
               <Image
-                src={weddingData.ceremony.image}
-                alt={weddingData.ceremony.name}
+                src={siteImages.ceremonyVenue}
+                alt={coupleInfo.ceremonyName || weddingData.ceremony.name}
                 fill
+                unoptimized
                 className="object-cover object-center hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0e1d2f]/80 via-transparent to-transparent" />
@@ -93,10 +110,10 @@ export const WeddingDetailsSection: React.FC = () => {
               </div>
               <div className="absolute bottom-4 left-6 right-6 text-white">
                 <h3 className="font-serif-title text-xl sm:text-2xl font-bold tracking-wide">
-                  {weddingData.ceremony.name}
+                  {coupleInfo.ceremonyName || weddingData.ceremony.name}
                 </h3>
                 <p className="text-xs text-amber-200 font-light">
-                  {weddingData.ceremony.subtitle}
+                  {coupleInfo.ceremonySubtitle || weddingData.ceremony.subtitle}
                 </p>
               </div>
             </div>
@@ -114,7 +131,7 @@ export const WeddingDetailsSection: React.FC = () => {
                       Ceremony Schedule
                     </p>
                     <p className="text-sm sm:text-base font-semibold text-[#1b3b5f]">
-                      {weddingData.ceremony.time}
+                      {coupleInfo.ceremonySchedule || coupleInfo.weddingTime || weddingData.ceremony.time}
                     </p>
                   </div>
                 </div>
@@ -129,7 +146,7 @@ export const WeddingDetailsSection: React.FC = () => {
                       Location Address
                     </p>
                     <p className="text-sm sm:text-base font-medium text-slate-800">
-                      {weddingData.ceremony.address}, {weddingData.ceremony.city}
+                      {coupleInfo.ceremonyAddress || weddingData.ceremony.address}, {coupleInfo.ceremonyCity || weddingData.ceremony.city}
                     </p>
                   </div>
                 </div>
@@ -137,27 +154,27 @@ export const WeddingDetailsSection: React.FC = () => {
                 {/* Notes */}
                 <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-slate-600 leading-relaxed font-light">
                   <span className="font-semibold text-[#1b3b5f]">Reminder: </span>
-                  {weddingData.ceremony.notes}
+                  {coupleInfo.ceremonyNotes || weddingData.ceremony.notes}
                 </div>
               </div>
 
               {/* Navigation Action Buttons */}
               <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-2.5">
                 <a
-                  href={weddingData.ceremony.mapsUrl}
+                  href={coupleInfo.ceremonyMapsUrl || weddingData.ceremony.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer"
                 >
                   <Navigation className="w-3.5 h-3.5 text-amber-200" />
                   <span>Maps</span>
                 </a>
 
                 <a
-                  href={weddingData.ceremony.wazeUrl}
+                  href={coupleInfo.ceremonyWazeUrl || weddingData.ceremony.wazeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Waze</span>
@@ -166,11 +183,11 @@ export const WeddingDetailsSection: React.FC = () => {
                 <button
                   onClick={() =>
                     copyToClipboard(
-                      `${weddingData.ceremony.name}, ${weddingData.ceremony.address}, ${weddingData.ceremony.city}`,
+                      `${coupleInfo.ceremonyName || weddingData.ceremony.name}, ${coupleInfo.ceremonyAddress || weddingData.ceremony.address}, ${coupleInfo.ceremonyCity || weddingData.ceremony.city}`,
                       true
                     )
                   }
-                  className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium transition-colors flex items-center gap-1"
+                  className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
                   title="Copy address"
                 >
                   {copiedCeremony ? (
@@ -194,9 +211,10 @@ export const WeddingDetailsSection: React.FC = () => {
             {/* Image Banner */}
             <div className="relative h-64 sm:h-72 w-full overflow-hidden">
               <Image
-                src={weddingData.reception.image}
-                alt={weddingData.reception.name}
+                src={siteImages.receptionVenue}
+                alt={coupleInfo.receptionName || weddingData.reception.name}
                 fill
+                unoptimized
                 className="object-cover object-center hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0e1d2f]/80 via-transparent to-transparent" />
@@ -208,10 +226,10 @@ export const WeddingDetailsSection: React.FC = () => {
               </div>
               <div className="absolute bottom-4 left-6 right-6 text-white">
                 <h3 className="font-serif-title text-xl sm:text-2xl font-bold tracking-wide">
-                  {weddingData.reception.name}
+                  {coupleInfo.receptionName || weddingData.reception.name}
                 </h3>
                 <p className="text-xs text-amber-200 font-light">
-                  {weddingData.reception.subtitle}
+                  {coupleInfo.receptionSubtitle || weddingData.reception.subtitle}
                 </p>
               </div>
             </div>
@@ -229,7 +247,7 @@ export const WeddingDetailsSection: React.FC = () => {
                       Reception Schedule
                     </p>
                     <p className="text-sm sm:text-base font-semibold text-[#1b3b5f]">
-                      {weddingData.reception.time}
+                      {coupleInfo.receptionSchedule || weddingData.reception.time}
                     </p>
                   </div>
                 </div>
@@ -244,7 +262,7 @@ export const WeddingDetailsSection: React.FC = () => {
                       Location Address
                     </p>
                     <p className="text-sm sm:text-base font-medium text-slate-800">
-                      {weddingData.reception.address}, {weddingData.reception.city}
+                      {coupleInfo.receptionAddress || weddingData.reception.address}, {coupleInfo.receptionCity || weddingData.reception.city}
                     </p>
                   </div>
                 </div>
@@ -252,27 +270,27 @@ export const WeddingDetailsSection: React.FC = () => {
                 {/* Notes */}
                 <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-slate-600 leading-relaxed font-light">
                   <span className="font-semibold text-[#1b3b5f]">Highlights: </span>
-                  {weddingData.reception.notes}
+                  {coupleInfo.receptionNotes || weddingData.reception.notes}
                 </div>
               </div>
 
               {/* Navigation Action Buttons */}
               <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-2.5">
                 <a
-                  href={weddingData.reception.mapsUrl}
+                  href={coupleInfo.receptionMapsUrl || weddingData.reception.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#1b3b5f] hover:bg-[#132c49] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer"
                 >
                   <Navigation className="w-3.5 h-3.5 text-amber-200" />
                   <span>Maps</span>
                 </a>
 
                 <a
-                  href={weddingData.reception.wazeUrl}
+                  href={coupleInfo.receptionWazeUrl || weddingData.reception.wazeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#7094b7] hover:bg-[#587c9f] text-white text-xs font-semibold uppercase tracking-wider text-center transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap cursor-pointer"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Waze</span>
@@ -281,11 +299,11 @@ export const WeddingDetailsSection: React.FC = () => {
                 <button
                   onClick={() =>
                     copyToClipboard(
-                      `${weddingData.reception.name}, ${weddingData.reception.address}, ${weddingData.reception.city}`,
+                      `${coupleInfo.receptionName || weddingData.reception.name}, ${coupleInfo.receptionAddress || weddingData.reception.address}, ${coupleInfo.receptionCity || weddingData.reception.city}`,
                       false
                     )
                   }
-                  className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium transition-colors flex items-center gap-1"
+                  className="px-3 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
                   title="Copy address"
                 >
                   {copiedReception ? (

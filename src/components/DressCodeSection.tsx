@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Copy, Check, Sparkles, Shirt, Crown, Heart } from "lucide-react";
+import { Copy, Check, Shirt, Crown, Heart } from "lucide-react";
 import { weddingStore, ThemeColor } from "@/lib/weddingStore";
 import { weddingData } from "@/data/weddingData";
+import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const DressCodeSection: React.FC = () => {
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [colors, setColors] = useState<ThemeColor[]>([]);
+  const siteImages = useSiteImages();
 
   useEffect(() => {
     setColors(weddingStore.getThemeColors());
@@ -28,21 +30,23 @@ export const DressCodeSection: React.FC = () => {
   };
 
   return (
-    <section id="dress-code" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#fafbfc] via-[#f0f6fc] to-[#fafbfc] relative overflow-hidden">
+    <section id="dress-code" className="pt-10 sm:pt-14 pb-4 sm:pb-6 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#fafbfc] via-[#f0f6fc] to-[#fafbfc] relative overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute top-0 -right-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
       <div className="absolute bottom-0 -left-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0 rotate-180">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
@@ -59,9 +63,10 @@ export const DressCodeSection: React.FC = () => {
           {/* Floral Header Banner */}
           <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
-              src="/images/floral-divider.jpg"
+              src={siteImages.floralDivider}
               alt="Dusty Blue Floral Header"
               fill
+              unoptimized
               className="object-contain mix-blend-multiply"
             />
           </div>
@@ -89,9 +94,10 @@ export const DressCodeSection: React.FC = () => {
           <div className="text-center mb-6 flex flex-col items-center">
             <div className="relative w-12 h-12 rounded-full overflow-hidden mb-1.5 border border-blue-200 shadow-md">
               <Image
-                src="/images/wedding-logo.png"
+                src={siteImages.logo}
                 alt="A&D Crest"
                 fill
+                unoptimized
                 className="object-cover"
               />
             </div>
@@ -149,9 +155,10 @@ export const DressCodeSection: React.FC = () => {
           >
             <div className="relative aspect-[3/4] w-full overflow-hidden group">
               <Image
-                src="/images/sample-dress-ladies.jpg"
+                src={siteImages.ladiesAttire}
                 alt="Ladies Wedding Guest Attire & Dress Inspiration"
                 fill
+                unoptimized
                 className="object-cover group-hover:scale-103 transition-transform duration-700"
               />
               <div className="absolute top-4 left-4">
@@ -187,9 +194,10 @@ export const DressCodeSection: React.FC = () => {
           >
             <div className="relative aspect-[3/4] w-full overflow-hidden group">
               <Image
-                src="/images/sample-attire-men.jpg"
+                src={siteImages.menAttire}
                 alt="Gentlemen Wedding Guest Attire & Barong Inspiration"
                 fill
+                unoptimized
                 className="object-cover group-hover:scale-103 transition-transform duration-700"
               />
               <div className="absolute top-4 left-4">

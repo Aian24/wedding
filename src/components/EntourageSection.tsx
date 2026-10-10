@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Users, Heart, Sparkles, ChevronDown } from "lucide-react";
+import { Users, Heart, ChevronDown } from "lucide-react";
 import { weddingStore, EntourageCategory } from "@/lib/weddingStore";
+import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const EntourageSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [entourage, setEntourage] = useState<EntourageCategory[]>([]);
+  const siteImages = useSiteImages();
 
   useEffect(() => {
     setEntourage(weddingStore.getEntourage());
@@ -23,21 +25,23 @@ export const EntourageSection: React.FC = () => {
   if (entourage.length === 0) return null;
 
   return (
-    <section id="entourage" className="py-14 sm:py-18 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
+    <section id="entourage" className="pt-8 sm:pt-10 pb-6 sm:pb-8 px-4 sm:px-6 lg:px-8 bg-[#fafbfc] relative overflow-hidden">
       {/* Corner Botanical Floral Accents */}
       <div className="absolute top-0 -right-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
       <div className="absolute bottom-0 -left-12 w-48 sm:w-64 h-48 sm:h-64 pointer-events-none opacity-20 mix-blend-multiply z-0 rotate-180">
         <Image
-          src="/images/floral-corner.jpg"
+          src={siteImages.floralCorner}
           alt=""
           fill
+          unoptimized
           className="object-contain"
         />
       </div>
@@ -54,9 +58,10 @@ export const EntourageSection: React.FC = () => {
           {/* Floral Header Banner */}
           <div className="relative w-36 sm:w-44 h-10 sm:h-14 mx-auto mb-1 opacity-85">
             <Image
-              src="/images/floral-divider.jpg"
+              src={siteImages.floralDivider}
               alt="Dusty Blue Floral Header"
               fill
+              unoptimized
               className="object-contain mix-blend-multiply"
             />
           </div>

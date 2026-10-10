@@ -31,6 +31,21 @@ declare global {
   }
 }
 
+export function extractYouTubeId(urlOrId: string): string {
+  if (!urlOrId || !urlOrId.trim()) return "5e_KM3SuBjE";
+  const clean = urlOrId.trim();
+  const match = clean.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/i
+  );
+  if (match && match[1]) {
+    return match[1];
+  }
+  if (/^[\w-]{11}$/.test(clean)) {
+    return clean;
+  }
+  return clean;
+}
+
 interface YTPlayer {
   playVideo: () => void;
   pauseVideo: () => void;
@@ -41,6 +56,8 @@ interface YTPlayer {
   setVolume: (volume: number) => void;
   getVolume: () => number;
   getPlayerState: () => number;
+  loadVideoById: (id: string | { videoId: string }) => void;
+  cueVideoById: (id: string | { videoId: string }) => void;
 }
 
 class YouTubeAudioController {
@@ -51,11 +68,61 @@ class YouTubeAudioController {
   private isMutedState: boolean = false;
   private volume: number = 85;
   private listeners: Set<StateListener> = new Set();
-  private readonly videoId: string = "5e_KM3SuBjE";
+  private videoId: string = "5e_KM3SuBjE";
 
   constructor() {
     if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("aian_dang_wedding_couple_info");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.bgMusicYoutubeUrl) {
+            this.videoId = extractYouTubeId(parsed.bgMusicYoutubeUrl);
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      window.addEventListener("wedding_couple_updated", () => {
+        try {
+          const saved = localStorage.getItem("aian_dang_wedding_couple_info");
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.bgMusicYoutubeUrl) {
+              this.setVideo(parsed.bgMusicYoutubeUrl);
+            }
+          }
+        } catch {
+          // ignore
+        }
+      });
+
       this.init();
+    }
+  }
+
+  public getVideoId(): string {
+    return this.videoId;
+  }
+
+  public setVideo(urlOrId: string, autoplayIfPlaying: boolean = false) {
+    const newId = extractYouTubeId(urlOrId);
+    if (!newId || newId === this.videoId) return;
+    this.videoId = newId;
+
+    if (this.player && this.isReady) {
+      try {
+        if (this.isPlayingState || autoplayIfPlaying) {
+          this.player.loadVideoById(newId);
+          this.isPlayingState = true;
+        } else {
+          this.player.cueVideoById(newId);
+        }
+        this.notify();
+      } catch (err) {
+        console.warn("Error changing YouTube audio track:", err);
+      }
     }
   }
 
