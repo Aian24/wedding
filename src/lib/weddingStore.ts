@@ -259,6 +259,30 @@ export const getInitialThemeColors = (): ThemeColor[] => {
   }));
 };
 
+export const isLocalEnvironment = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname.endsWith(".local")
+  );
+};
+
+export const shouldSyncToNeon = (): boolean => {
+  if (typeof window === "undefined") return true;
+  // On production (e.g., deployed on Vercel), always push directly to Neon cloud DB
+  if (!isLocalEnvironment()) return true;
+  // On localhost, keep changes in local storage by default to protect Vercel
+  // Only push if explicitly enabled by the user in the admin header toggle
+  return localStorage.getItem("admin_sync_to_neon") === "true";
+};
+
+export const setLocalNeonSync = (enabled: boolean) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("admin_sync_to_neon", enabled ? "true" : "false");
+  window.dispatchEvent(new Event("admin_sync_mode_changed"));
+};
+
 export const weddingStore = {
   // Parties / Master Guest List
   getParties(): InvitedParty[] {
@@ -291,11 +315,13 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(parties));
     window.dispatchEvent(new Event("wedding_parties_updated"));
-    fetch("/api/guests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ parties }),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/guests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parties }),
+      }).catch(console.error);
+    }
   },
 
   addParty(party: Omit<InvitedParty, "id">): InvitedParty {
@@ -306,11 +332,13 @@ export const weddingStore = {
     };
     const updated = [newParty, ...parties];
     this.saveParties(updated);
-    fetch("/api/guests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newParty),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/guests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newParty),
+      }).catch(console.error);
+    }
     return newParty;
   },
 
@@ -319,7 +347,7 @@ export const weddingStore = {
     const updated = parties.map((p) => (p.id === id ? { ...p, ...updates, lastUpdated: new Date().toLocaleString() } : p));
     this.saveParties(updated);
     const target = updated.find((p) => p.id === id);
-    if (target) {
+    if (target && shouldSyncToNeon()) {
       fetch("/api/guests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -332,9 +360,11 @@ export const weddingStore = {
     const parties = this.getParties();
     const updated = parties.filter((p) => p.id !== id);
     this.saveParties(updated);
-    fetch(`/api/guests?id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch(`/api/guests?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).catch(console.error);
+    }
   },
 
   findPartyByGuestName(nameQuery: string): InvitedParty | null {
@@ -371,11 +401,13 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(colors));
     window.dispatchEvent(new Event("wedding_theme_updated"));
-    fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "theme_colors", data: colors }),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "theme_colors", data: colors }),
+      }).catch(console.error);
+    }
   },
 
   addThemeColor(color: Omit<ThemeColor, "id">): ThemeColor {
@@ -455,11 +487,13 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.COUPLE_INFO, JSON.stringify(info));
     window.dispatchEvent(new Event("wedding_couple_updated"));
-    fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "couple_info", data: info }),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "couple_info", data: info }),
+      }).catch(console.error);
+    }
   },
 
   // Entourage
@@ -482,11 +516,13 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.ENTOURAGE, JSON.stringify(entourage));
     window.dispatchEvent(new Event("wedding_entourage_updated"));
-    fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "entourage", data: entourage }),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "entourage", data: entourage }),
+      }).catch(console.error);
+    }
   },
 
   addEntourageMember(categoryIndex: number, member: { role: string; name: string }): EntourageMember | null {
@@ -534,8 +570,10 @@ export const weddingStore = {
   clearAllGuestData() {
     this.saveParties([]);
     this.saveRsvps([]);
-    fetch("/api/guests?clearAll=true", { method: "DELETE" }).catch(console.error);
-    fetch("/api/rsvp?clearAll=true", { method: "DELETE" }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/guests?clearAll=true", { method: "DELETE" }).catch(console.error);
+      fetch("/api/rsvp?clearAll=true", { method: "DELETE" }).catch(console.error);
+    }
   },
 
   // RSVPs
@@ -568,11 +606,13 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.RSVPS, JSON.stringify(rsvps));
     window.dispatchEvent(new Event("wedding_rsvps_updated"));
-    fetch("/api/rsvp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rsvps }),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rsvps }),
+      }).catch(console.error);
+    }
   },
 
   addRsvp(entry: Omit<RsvpEntry, "id" | "submittedAt">): RsvpEntry {
@@ -585,11 +625,13 @@ export const weddingStore = {
     const updated = [newEntry, ...rsvps];
     this.saveRsvps(updated);
 
-    fetch("/api/rsvp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newEntry),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEntry),
+      }).catch(console.error);
+    }
 
     // If matching party found, update party member states too
     if (entry.partyId) {
@@ -618,20 +660,24 @@ export const weddingStore = {
     const rsvps = this.getRsvps();
     const updated = rsvps.map((r) => (r.id === id ? { ...r, ...updates } : r));
     this.saveRsvps(updated);
-    fetch("/api/rsvp", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...updates }),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/rsvp", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...updates }),
+      }).catch(console.error);
+    }
   },
 
   deleteRsvp(id: string) {
     const rsvps = this.getRsvps();
     const updated = rsvps.filter((r) => r.id !== id);
     this.saveRsvps(updated);
-    fetch(`/api/rsvp?id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch(`/api/rsvp?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).catch(console.error);
+    }
   },
 
   // Registry
@@ -697,11 +743,13 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(images));
     window.dispatchEvent(new Event("wedding_images_updated"));
-    fetch("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "site_images", data: images }),
-    }).catch(console.error);
+    if (shouldSyncToNeon()) {
+      fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "site_images", data: images }),
+      }).catch(console.error);
+    }
   },
 
   updateSiteImage(key: keyof SiteImages, url: string) {
