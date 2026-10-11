@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -14,11 +14,22 @@ import {
   Clock,
   Heart,
 } from "lucide-react";
-import { weddingData } from "@/data/weddingData";
+import { weddingStore, TimelineEvent } from "@/lib/weddingStore";
 import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const WeddingTimelineSection: React.FC = () => {
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const siteImages = useSiteImages();
+
+  useEffect(() => {
+    setTimeline(weddingStore.getTimeline());
+    const handleUpdate = () => {
+      setTimeline(weddingStore.getTimeline());
+    };
+    window.addEventListener("wedding_timeline_updated", handleUpdate);
+    return () => window.removeEventListener("wedding_timeline_updated", handleUpdate);
+  }, []);
+
   const getIcon = (iconName: string) => {
     const props = { className: "w-5 h-5 text-amber-200" };
     switch (iconName) {
@@ -104,12 +115,12 @@ export const WeddingTimelineSection: React.FC = () => {
           <div className="md:hidden absolute top-6 bottom-6 left-6 w-0.5 bg-gradient-to-b from-blue-300 via-blue-400 to-amber-300" />
 
           <div className="space-y-8 md:space-y-12">
-            {weddingData.timeline.map((item, index) => {
+            {timeline.map((item, index) => {
               const isEven = index % 2 === 0;
 
               return (
                 <motion.div
-                  key={item.title}
+                  key={item.id || item.title || index}
                   initial={{ opacity: 0, y: 35, scale: 0.96 }}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: false, amount: 0.2 }}

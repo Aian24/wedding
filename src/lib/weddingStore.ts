@@ -79,6 +79,24 @@ export interface GuestbookEntry {
   date: string;
 }
 
+export interface DressCodeItem {
+  id: string;
+  category: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  reminder: string;
+  image?: string;
+}
+
+export interface TimelineEvent {
+  id: string;
+  time: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
 export interface CoupleInfo {
   groomName: string;
   groomNickname: string;
@@ -156,6 +174,8 @@ const STORAGE_KEYS = {
   GUESTBOOK: "aian_dang_wedding_guestbook",
   ADMIN_AUTH: "aian_dang_admin_session",
   SITE_IMAGES: "aian_dang_wedding_site_images",
+  DRESS_CODES: "aian_dang_wedding_dress_codes",
+  TIMELINE: "aian_dang_wedding_timeline",
 };
 
 export const getInitialSiteImages = (): SiteImages => {
@@ -258,6 +278,45 @@ export const getInitialThemeColors = (): ThemeColor[] => {
     desc: c.desc,
   }));
 };
+
+export const getInitialDressCodes = (): DressCodeItem[] => [
+  {
+    id: "dc-bride-groom",
+    category: "Brides and Grooms",
+    title: "Bridal Gown & Bespoke Groom Suit",
+    subtitle: "Pure Pearl White & Midnight Navy Tuxedo",
+    description: "The bride is adorned in a bespoke pure pearl white bridal gown, while the groom dons a tailored Midnight Navy 2-piece suit and tuxedo.",
+    reminder: "Kindly note that pure white is strictly reserved for our radiant bride Dang.",
+    image: "/images/hero.jpg",
+  },
+  {
+    id: "dc-ninang-ninong",
+    category: "Ninang and Ninong",
+    title: "Principal Sponsors: Elegant Long Gowns & Piña Barong",
+    subtitle: "Shades of Slate Blue, Midnight Navy & Formal Piña",
+    description: "Ninangs: Floor-length formal evening gowns in slate blue or midnight navy. Ninongs: Traditional formal Embroidered Piña Barong Tagalog with dark trousers.",
+    reminder: "Principal sponsors are requested to arrive promptly by 2:30 PM for the processional lineup.",
+    image: "/images/sample-dress-ladies.jpg",
+  },
+  {
+    id: "dc-guest",
+    category: "Guest",
+    title: "Cherished Guests: Formal & Semi-Formal Attire",
+    subtitle: "Dusty Blue, Slate, Navy, Ice Blue & Champagne",
+    description: "Ladies: Floor-length or midi formal dresses in our official wedding palette. Gentlemen: Tailored suits or Barong Tagalog with dress trousers.",
+    reminder: "Gentle Reminder: We kindly request all lovely guests to refrain from wearing all-white, ivory, or cream dresses.",
+    image: "/images/sample-attire-men.jpg",
+  },
+];
+
+export const getInitialTimeline = (): TimelineEvent[] =>
+  defaultData.timeline.map((item, idx) => ({
+    id: `tl-${idx}`,
+    time: item.time,
+    title: item.title,
+    description: item.description,
+    icon: item.icon,
+  }));
 
 export const isLocalEnvironment = (): boolean => {
   if (typeof window === "undefined") return false;
@@ -741,7 +800,11 @@ export const weddingStore = {
 
   saveSiteImages(images: SiteImages) {
     if (typeof window === "undefined") return;
-    localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(images));
+    try {
+      localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(images));
+    } catch (err) {
+      console.warn("Storage quota warning (iOS/WebKit): saving to memory/remote:", err);
+    }
     window.dispatchEvent(new Event("wedding_images_updated"));
     if (shouldSyncToNeon()) {
       fetch("/api/config", {
@@ -765,6 +828,103 @@ export const weddingStore = {
 
   resetAllSiteImages() {
     this.saveSiteImages(getInitialSiteImages());
+  },
+
+  // 3 Dress Code Guidelines (Brides & Grooms, Ninang & Ninong, Guests)
+  getDressCodes(): DressCodeItem[] {
+    if (typeof window === "undefined") return getInitialDressCodes();
+    const saved = localStorage.getItem(STORAGE_KEYS.DRESS_CODES);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 3) return parsed;
+      } catch {
+        return getInitialDressCodes();
+      }
+    }
+    const init = getInitialDressCodes();
+    localStorage.setItem(STORAGE_KEYS.DRESS_CODES, JSON.stringify(init));
+    return init;
+  },
+
+  saveDressCodes(dressCodes: DressCodeItem[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEYS.DRESS_CODES, JSON.stringify(dressCodes));
+    window.dispatchEvent(new Event("wedding_dress_codes_updated"));
+    if (shouldSyncToNeon()) {
+      fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "dress_codes", data: dressCodes }),
+      }).catch(console.error);
+    }
+  },
+
+  updateDressCode(id: string, updates: Partial<DressCodeItem>) {
+    const list = this.getDressCodes();
+    const updated = list.map((item) => (item.id === id ? { ...item, ...updates } : item));
+    this.saveDressCodes(updated);
+  },
+
+  resetDressCodes() {
+    this.saveDressCodes(getInitialDressCodes());
+  },
+
+  // Wedding Timeline
+  getTimeline(): TimelineEvent[] {
+    if (typeof window === "undefined") return getInitialTimeline();
+    const saved = localStorage.getItem(STORAGE_KEYS.TIMELINE);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {
+        return getInitialTimeline();
+      }
+    }
+    const init = getInitialTimeline();
+    localStorage.setItem(STORAGE_KEYS.TIMELINE, JSON.stringify(init));
+    return init;
+  },
+
+  saveTimeline(timeline: TimelineEvent[]) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEYS.TIMELINE, JSON.stringify(timeline));
+    window.dispatchEvent(new Event("wedding_timeline_updated"));
+    if (shouldSyncToNeon()) {
+      fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "timeline", data: timeline }),
+      }).catch(console.error);
+    }
+  },
+
+  addTimelineItem(item: Omit<TimelineEvent, "id">): TimelineEvent {
+    const current = this.getTimeline();
+    const newItem: TimelineEvent = {
+      id: "tl-" + Date.now(),
+      ...item,
+    };
+    const updated = [...current, newItem];
+    this.saveTimeline(updated);
+    return newItem;
+  },
+
+  updateTimelineItem(id: string, updates: Partial<TimelineEvent>) {
+    const current = this.getTimeline();
+    const updated = current.map((i) => (i.id === id ? { ...i, ...updates } : i));
+    this.saveTimeline(updated);
+  },
+
+  deleteTimelineItem(id: string) {
+    const current = this.getTimeline();
+    const updated = current.filter((i) => i.id !== id);
+    this.saveTimeline(updated);
+  },
+
+  resetTimeline() {
+    this.saveTimeline(getInitialTimeline());
   },
 
   // Global Neon Database Hydration
@@ -793,6 +953,14 @@ export const weddingStore = {
         if (configRes.siteImages) {
           localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(configRes.siteImages));
           window.dispatchEvent(new Event("wedding_images_updated"));
+        }
+        if (configRes.dressCodes) {
+          localStorage.setItem(STORAGE_KEYS.DRESS_CODES, JSON.stringify(configRes.dressCodes));
+          window.dispatchEvent(new Event("wedding_dress_codes_updated"));
+        }
+        if (configRes.timeline) {
+          localStorage.setItem(STORAGE_KEYS.TIMELINE, JSON.stringify(configRes.timeline));
+          window.dispatchEvent(new Event("wedding_timeline_updated"));
         }
       }
 

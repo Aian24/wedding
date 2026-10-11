@@ -15,11 +15,6 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
     // Determine extension
     const originalExt = path.extname(file.name) || "";
     const lowerExt = originalExt.toLowerCase();
@@ -46,13 +41,36 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const fileName = `${key}-${Date.now()}${safeExt}`;
-    const filePath = path.join(uploadsDir, fileName);
+    // Try writing to public/uploads (local development)
+    try {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
 
-    await fs.promises.writeFile(filePath, buffer);
+      const fileName = `${key}-${Date.now()}${safeExt}`;
+      const filePath = path.join(uploadsDir, fileName);
 
-    const publicUrl = `/uploads/${fileName}`;
-    return NextResponse.json({ success: true, url: publicUrl });
+      await fs.promises.writeFile(filePath, buffer);
+
+      const publicUrl = `/uploads/${fileName}`;
+      return NextResponse.json({ success: true, url: publicUrl });
+    } catch (fsError: any) {
+      // In serverless environments like Vercel, the local filesystem is read-only.
+      // Gracefully return base64 data URI so uploads succeed seamlessly on all devices and cloud hosts.
+      const mime =
+        file.type ||
+        (safeExt === ".png"
+          ? "image/png"
+          : safeExt === ".webp"
+          ? "image/webp"
+          : safeExt === ".mp4"
+          ? "video/mp4"
+          : "image/jpeg");
+      const base64 = buffer.toString("base64");
+      const dataUri = `data:${mime};base64,${base64}`;
+      return NextResponse.json({ success: true, url: dataUri });
+    }
   } catch (error: any) {
     console.error("Media upload error:", error);
     return NextResponse.json(

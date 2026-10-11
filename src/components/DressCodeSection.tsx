@@ -3,24 +3,34 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Copy, Check, Shirt, Crown, Heart } from "lucide-react";
-import { weddingStore, ThemeColor } from "@/lib/weddingStore";
+import { Copy, Check } from "lucide-react";
+import { weddingStore, ThemeColor, DressCodeItem } from "@/lib/weddingStore";
 import { weddingData } from "@/data/weddingData";
 import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const DressCodeSection: React.FC = () => {
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [colors, setColors] = useState<ThemeColor[]>([]);
+  const [dressCodes, setDressCodes] = useState<DressCodeItem[]>([]);
   const siteImages = useSiteImages();
 
   useEffect(() => {
     setColors(weddingStore.getThemeColors());
+    setDressCodes(weddingStore.getDressCodes());
 
-    const handleUpdate = () => {
+    const handleThemeUpdate = () => {
       setColors(weddingStore.getThemeColors());
     };
-    window.addEventListener("wedding_theme_updated", handleUpdate);
-    return () => window.removeEventListener("wedding_theme_updated", handleUpdate);
+    const handleDressUpdate = () => {
+      setDressCodes(weddingStore.getDressCodes());
+    };
+
+    window.addEventListener("wedding_theme_updated", handleThemeUpdate);
+    window.addEventListener("wedding_dress_codes_updated", handleDressUpdate);
+    return () => {
+      window.removeEventListener("wedding_theme_updated", handleThemeUpdate);
+      window.removeEventListener("wedding_dress_codes_updated", handleDressUpdate);
+    };
   }, []);
 
   const handleCopyHex = (hex: string) => {
@@ -83,13 +93,13 @@ export const DressCodeSection: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Color Palette Swatches */}
+        {/* Color Palette Swatches (3 colors per line on mobile) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.2 }}
           transition={{ duration: 0.5 }}
-          className="glass-card rounded-3xl p-6 sm:p-8 border border-blue-100 shadow-xl relative mb-12"
+          className="glass-card rounded-3xl p-4 sm:p-8 border border-blue-100 shadow-xl relative mb-12"
         >
           <div className="text-center mb-6 flex flex-col items-center">
             <div className="relative w-12 h-12 rounded-full overflow-hidden mb-1.5 border border-blue-200 shadow-md">
@@ -101,7 +111,7 @@ export const DressCodeSection: React.FC = () => {
                 className="object-cover"
               />
             </div>
-            <span className="text-[11px] uppercase tracking-[0.25em] text-[#7094b7] font-bold">
+            <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#7094b7] font-bold">
               Official Wedding Swatches (Click to Copy HEX)
             </span>
             <h3 className="font-serif-title text-xl sm:text-2xl font-bold text-[#1b3b5f]">
@@ -109,33 +119,33 @@ export const DressCodeSection: React.FC = () => {
             </h3>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
             {colors.map((color) => (
               <div
                 key={color.id || color.name}
                 onClick={() => handleCopyHex(color.hex)}
-                className="cursor-pointer group flex flex-col items-center text-center p-3 rounded-2xl hover:bg-white/90 transition-all border border-transparent hover:border-blue-200 shadow-2xs hover:shadow-md"
+                className="cursor-pointer group flex flex-col items-center text-center p-2 sm:p-3 rounded-2xl hover:bg-white/90 transition-all border border-transparent hover:border-blue-200 shadow-2xs hover:shadow-md"
               >
                 <div
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full shadow-md border-4 border-white mb-2.5 group-hover:scale-105 transition-all duration-300 relative flex items-center justify-center"
+                  className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full shadow-md border-2 sm:border-4 border-white mb-2 group-hover:scale-105 transition-all duration-300 relative flex items-center justify-center shrink-0"
                   style={{ backgroundColor: color.hex }}
                 >
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-full inset-0 absolute flex items-center justify-center text-white text-xs font-medium">
                     {copiedHex === color.hex ? (
-                      <Check className="w-5 h-5 text-emerald-300" />
+                      <Check className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-300" />
                     ) : (
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     )}
                   </div>
                 </div>
 
-                <p className="font-serif-title text-xs sm:text-sm font-bold text-[#1b3b5f]">
+                <p className="font-serif-title text-[11px] sm:text-xs lg:text-sm font-bold text-[#1b3b5f] truncate max-w-full">
                   {color.name}
                 </p>
-                <p className="text-[10px] font-mono font-medium text-slate-400 uppercase">
+                <p className="text-[9px] sm:text-[10px] font-mono font-medium text-slate-400 uppercase">
                   {color.hex}
                 </p>
-                <p className="text-[10px] text-slate-500 mt-0.5 font-light leading-tight">
+                <p className="text-[9px] sm:text-[10px] text-slate-500 mt-0.5 font-light leading-tight line-clamp-2">
                   {color.desc}
                 </p>
               </div>
@@ -143,85 +153,61 @@ export const DressCodeSection: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Visual Sample Dresses & Attire Inspiration Lookbook */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-          {/* Ladies Attire Card */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 0.5 }}
-            className="glass-card rounded-3xl overflow-hidden border border-blue-100 shadow-xl flex flex-col justify-between"
-          >
-            <div className="relative aspect-[3/4] w-full overflow-hidden group">
-              <Image
-                src={siteImages.ladiesAttire}
-                alt="Ladies Wedding Guest Attire & Dress Inspiration"
-                fill
-                unoptimized
-                className="object-cover group-hover:scale-103 transition-transform duration-700"
-              />
-              <div className="absolute top-4 left-4">
-                <span className="px-3 py-1 rounded-full bg-[#1b3b5f]/90 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-md border border-amber-200/50">
-                  Ninangs &amp; Ladies
-                </span>
-              </div>
-            </div>
+        {/* 3 Dress Code Categories (Brides & Grooms, Ninang & Ninong, Guests) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-10">
+          {dressCodes.map((item, index) => {
+            const fallbackImage =
+              index === 0
+                ? siteImages.heroPoster
+                : index === 1
+                ? siteImages.ladiesAttire
+                : siteImages.menAttire;
 
-            <div className="p-6">
-              <h4 className="font-serif-title text-xl font-bold text-[#1b3b5f] mb-1">
-                Ladies: Floor-Length &amp; Midi Gowns
-              </h4>
-              <p className="text-xs text-[#7094b7] font-semibold uppercase tracking-wider mb-2">
-                Shades of Dusty Blue, Slate, &amp; Midnight Navy
-              </p>
-              <p className="text-xs sm:text-sm text-slate-600 font-light leading-relaxed mb-4">
-                Soft flowing chiffon, satin, or delicate lace evening gowns in our official wedding palette.
-              </p>
-              <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-[11px] text-amber-900 leading-relaxed">
-                <strong>Gentle Reminder:</strong> We kindly request all lovely guests to refrain from wearing all-white, ivory, or cream dresses so our radiant bride Dang can shine on her special day.
-              </div>
-            </div>
-          </motion.div>
+            return (
+              <motion.div
+                key={item.id || item.category}
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: false, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="glass-card rounded-3xl overflow-hidden border border-blue-100 shadow-xl flex flex-col justify-between"
+              >
+                <div className="relative aspect-[3/4] w-full overflow-hidden group bg-slate-100">
+                  <Image
+                    src={item.image || fallbackImage}
+                    alt={item.title}
+                    fill
+                    unoptimized
+                    className="object-cover group-hover:scale-103 transition-transform duration-700"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <span className="px-3 py-1 rounded-full bg-[#1b3b5f]/90 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-md border border-amber-200/50">
+                      {item.category}
+                    </span>
+                  </div>
+                </div>
 
-          {/* Gentlemen Attire Card */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 0.5 }}
-            className="glass-card rounded-3xl overflow-hidden border border-blue-100 shadow-xl flex flex-col justify-between"
-          >
-            <div className="relative aspect-[3/4] w-full overflow-hidden group">
-              <Image
-                src={siteImages.menAttire}
-                alt="Gentlemen Wedding Guest Attire & Barong Inspiration"
-                fill
-                unoptimized
-                className="object-cover group-hover:scale-103 transition-transform duration-700"
-              />
-              <div className="absolute top-4 left-4">
-                <span className="px-3 py-1 rounded-full bg-[#1b3b5f]/90 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-md border border-amber-200/50">
-                  Ninongs &amp; Gentlemen
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <h4 className="font-serif-title text-xl font-bold text-[#1b3b5f] mb-1">
-                Gentlemen: Formal Suits &amp; Barong Tagalog
-              </h4>
-              <p className="text-xs text-[#7094b7] font-semibold uppercase tracking-wider mb-2">
-                Embroidered Piña Barong or Navy / Slate Tailored Suit
-              </p>
-              <p className="text-xs sm:text-sm text-slate-600 font-light leading-relaxed mb-4">
-                Traditional formal Embroidered Barong Tagalog paired with black trousers, or classic tailored Navy Blue / Slate Blue 2-piece suits with dress shoes.
-              </p>
-              <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200/60 text-[11px] text-blue-900 leading-relaxed">
-                <strong>Accessory Tip:</strong> Slate blue, navy, or champagne ties and pocket squares complement the wedding theme beautifully.
-              </div>
-            </div>
-          </motion.div>
+                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-serif-title text-lg sm:text-xl font-bold text-[#1b3b5f] mb-1">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs text-[#7094b7] font-semibold uppercase tracking-wider mb-2">
+                      {item.subtitle}
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-600 font-light leading-relaxed mb-4">
+                      {item.description}
+                    </p>
+                  </div>
+                  {item.reminder && (
+                    <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-[11px] text-amber-900 leading-relaxed mt-auto">
+                      {item.reminder}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

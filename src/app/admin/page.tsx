@@ -55,6 +55,7 @@ import {
   Utensils,
   Navigation,
   BookOpen,
+  Shirt,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
@@ -70,6 +71,10 @@ import {
   getInitialCoupleInfo,
   SiteImages,
   getInitialSiteImages,
+  DressCodeItem,
+  getInitialDressCodes,
+  TimelineEvent,
+  getInitialTimeline,
   isLocalEnvironment,
   shouldSyncToNeon,
   setLocalNeonSync,
@@ -97,6 +102,7 @@ export default function AdminPage() {
     | "couple"
     | "envelope"
     | "venues"
+    | "timeline"
     | "music"
     | "footer"
     | "parties"
@@ -111,6 +117,8 @@ export default function AdminPage() {
   const [rsvps, setRsvps] = useState<RsvpEntry[]>([]);
   const [parties, setParties] = useState<InvitedParty[]>([]);
   const [colors, setColors] = useState<ThemeColor[]>([]);
+  const [dressCodes, setDressCodes] = useState<DressCodeItem[]>(getInitialDressCodes);
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(getInitialTimeline);
   const [entourage, setEntourage] = useState<EntourageCategory[]>([]);
   const [wishes, setWishes] = useState<GuestbookEntry[]>([]);
   const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
@@ -197,6 +205,7 @@ export default function AdminPage() {
         "couple",
         "envelope",
         "venues",
+        "timeline",
         "music",
         "footer",
         "parties",
@@ -251,6 +260,8 @@ export default function AdminPage() {
     setRsvps(weddingStore.getRsvps());
     setParties(weddingStore.getParties());
     setColors(weddingStore.getThemeColors());
+    setDressCodes(weddingStore.getDressCodes());
+    setTimelineEvents(weddingStore.getTimeline());
     setEntourage(weddingStore.getEntourage());
     setCoupleInfo(weddingStore.getCoupleInfo());
     setSiteImages(weddingStore.getSiteImages());
@@ -267,6 +278,8 @@ export default function AdminPage() {
       if (configRes && configRes.success) {
         if (configRes.coupleInfo) setCoupleInfo(configRes.coupleInfo);
         if (configRes.themeColors) setColors(configRes.themeColors);
+        if (configRes.dressCodes) setDressCodes(configRes.dressCodes);
+        if (configRes.timeline) setTimelineEvents(configRes.timeline);
         if (configRes.entourage) setEntourage(configRes.entourage);
         if (configRes.siteImages) setSiteImages(configRes.siteImages);
       }
@@ -284,7 +297,75 @@ export default function AdminPage() {
     }
   };
 
-  // Media & Video Management Handlers
+  // Mobile & iOS-safe Image Compressor (handles iPhone HEIC/large resolutions via offscreen Canvas)
+  const compressImageFile = (
+    file: File,
+    maxWidth = 1920,
+    quality = 0.85
+  ): Promise<string> => {
+    return new Promise((resolve) => {
+      // Create local object URL for instant decoding
+      const objectUrl = URL.createObjectURL(file);
+      const img = new window.Image();
+
+      img.onload = () => {
+        try {
+          let { naturalWidth: width, naturalHeight: height } = img;
+          if (!width || !height) {
+            width = img.width || 1200;
+            height = img.height || 800;
+          }
+
+          if (width > maxWidth || height > maxWidth) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxWidth) / height);
+              height = maxWidth;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+
+          if (!ctx) {
+            URL.revokeObjectURL(objectUrl);
+            const fallbackReader = new FileReader();
+            fallbackReader.onload = () => resolve((fallbackReader.result as string) || "");
+            fallbackReader.onerror = () => resolve("");
+            fallbackReader.readAsDataURL(file);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          URL.revokeObjectURL(objectUrl);
+          resolve(dataUrl);
+        } catch {
+          URL.revokeObjectURL(objectUrl);
+          const fallbackReader = new FileReader();
+          fallbackReader.onload = () => resolve((fallbackReader.result as string) || "");
+          fallbackReader.onerror = () => resolve("");
+          fallbackReader.readAsDataURL(file);
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        const fallbackReader = new FileReader();
+        fallbackReader.onload = () => resolve((fallbackReader.result as string) || "");
+        fallbackReader.onerror = () => resolve("");
+        fallbackReader.readAsDataURL(file);
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
+  // Media & Video Management Handlers (Full iOS Chrome & Android compatibility)
   const handleMediaFileSelect = async (
     key: keyof SiteImages,
     e: React.ChangeEvent<HTMLInputElement>
@@ -298,8 +379,7 @@ export default function AdminPage() {
       file.type.startsWith("video/") ||
       Boolean(file.name.match(/\.(mp4|webm|mov|m4v|ogg)$/i));
 
-    // For videos or large media (> 2MB), upload directly to server to prevent localStorage quota errors
-    if (isVideo || file.size > 2 * 1024 * 1024) {
+    if (isVideo) {
       try {
         const formData = new FormData();
         formData.append("file", file);
@@ -315,37 +395,38 @@ export default function AdminPage() {
           if (data.url) {
             weddingStore.updateSiteImage(key, data.url);
             setSiteImages(weddingStore.getSiteImages());
-            setImageSuccessMsg(
-              `${isVideo ? "Video" : "Media"} uploaded and saved successfully! Changes are live across the site.`
-            );
+            setImageSuccessMsg("Video uploaded successfully! Changes are live across the site.");
             swalAlert.toastSuccess(
               "Upload Successful!",
-              `${isVideo ? "Video" : "Image"} uploaded and updated live on the site.`
+              "Video uploaded and updated live on the site."
             );
           }
         } else {
           const errData = await res.json().catch(() => ({}));
-          swalAlert.error("Upload Failed", errData.error || "Failed to upload file to the server.");
+          swalAlert.error("Upload Failed", errData.error || "Failed to upload video to the server.");
         }
       } catch (err: any) {
-        console.error("Upload error:", err);
-        swalAlert.error("Upload Error", err.message || "A network or server error occurred during upload.");
+        console.error("Video upload error:", err);
+        swalAlert.error("Upload Error", err.message || "A network error occurred during video upload.");
       } finally {
         setIsUploadingImage(null);
-        setTimeout(() => setImageSuccessMsg(""), 4000);
+        if (e.target) e.target.value = "";
       }
       return;
     }
 
-    // For smaller images, provide immediate local base64 preview while uploading permanently
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const dataUrl = evt.target?.result as string;
-      if (dataUrl) {
-        weddingStore.updateSiteImage(key, dataUrl);
+    // For images (including iPhone/iPad camera photos, HEIC, high-res photos):
+    try {
+      const maxDim = key === "logo" ? 800 : 1920;
+      const optimizedDataUrl = await compressImageFile(file, maxDim, 0.85);
+
+      if (optimizedDataUrl) {
+        // Immediately update live store, localStorage (protected) and Neon DB sync
+        weddingStore.updateSiteImage(key, optimizedDataUrl);
         setSiteImages(weddingStore.getSiteImages());
       }
 
+      // Also try background upload for local filesystem static serving (when available)
       try {
         const formData = new FormData();
         formData.append("file", file);
@@ -358,21 +439,29 @@ export default function AdminPage() {
 
         if (res.ok) {
           const data = await res.json();
-          if (data.url) {
+          // If server returned a static file path (e.g. /uploads/...), save it as well
+          if (data.url && !data.url.startsWith("data:")) {
             weddingStore.updateSiteImage(key, data.url);
             setSiteImages(weddingStore.getSiteImages());
           }
         }
-      } catch (err) {
-        console.warn("Server upload fallback:", err);
-      } finally {
-        setIsUploadingImage(null);
-        setImageSuccessMsg("Media asset updated successfully! Changes are live across the website.");
-        swalAlert.toastSuccess("Asset Updated!", "Your media item is now live across the wedding site.");
-        setTimeout(() => setImageSuccessMsg(""), 4000);
+      } catch (uploadErr) {
+        console.warn("Background upload note (handled gracefully):", uploadErr);
       }
-    };
-    reader.readAsDataURL(file);
+
+      setImageSuccessMsg("Image uploaded and saved successfully! Changes are live across the site.");
+      swalAlert.toastSuccess(
+        "Image Updated!",
+        "Photo uploaded and saved live across the wedding site."
+      );
+    } catch (err: any) {
+      console.error("Image processing error:", err);
+      swalAlert.error("Upload Issue", "Could not process image file. Please try another photo.");
+    } finally {
+      setIsUploadingImage(null);
+      if (e.target) e.target.value = "";
+      setTimeout(() => setImageSuccessMsg(""), 4000);
+    }
   };
 
   const handleResetImage = async (key: keyof SiteImages) => {
@@ -1544,6 +1633,29 @@ export default function AdminPage() {
 
             <button
               onClick={() => {
+                setActiveTab("timeline");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
+                activeTab === "timeline"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3 truncate">
+                <Clock className="w-4 h-4 text-amber-300 shrink-0" />
+                <span className="truncate">
+                  <span className="sm:hidden">Timeline</span>
+                  <span className="hidden sm:inline">Day Timeline</span>
+                </span>
+              </div>
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-blue-800 text-[10px] text-white shrink-0">
+                {timelineEvents.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
                 setActiveTab("music");
                 setSidebarOpen(false);
               }}
@@ -1771,6 +1883,7 @@ export default function AdminPage() {
                 {activeTab === "couple" && "Couple Names & Story"}
                 {activeTab === "envelope" && "Opening Envelope Texts"}
                 {activeTab === "venues" && "Ceremony & Reception Venues"}
+                {activeTab === "timeline" && "Wedding Day Timeline"}
                 {activeTab === "music" && "Background Music"}
                 {activeTab === "footer" && "Footer Verse & Credits"}
                 {activeTab === "parties" && "Master Guest List"}
@@ -1887,6 +2000,30 @@ export default function AdminPage() {
                 <Plus className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Add Palette Swatch</span>
                 <span className="sm:hidden">Color</span>
+              </button>
+            )}
+
+            {activeTab === "timeline" && (
+              <button
+                type="button"
+                onClick={() => {
+                  const newEvent: TimelineEvent = {
+                    id: "tl-" + Date.now(),
+                    time: "09:00 PM",
+                    title: "New Celebration Event",
+                    description: "Description of the event activities and instructions.",
+                    icon: "clock",
+                  };
+                  const updated = [...timelineEvents, newEvent];
+                  setTimelineEvents(updated);
+                  weddingStore.saveTimeline(updated);
+                  swalAlert.toastSuccess("Event Added", "New timeline event added.");
+                }}
+                className="px-3.5 py-2 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Add Schedule Event</span>
+                <span className="sm:hidden">Add Event</span>
               </button>
             )}
 
@@ -2921,6 +3058,256 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* WEDDING DAY TIMELINE TAB */}
+          {activeTab === "timeline" && (
+            <div className="space-y-6 w-full">
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                  <div>
+                    <h3 className="font-serif-title font-bold text-xl text-[#1b3b5f] flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-amber-500" />
+                      <span>Wedding Day Timeline Schedule</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Customize schedule times, event titles, descriptions, and icons displayed in the wedding timeline.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const confirmed = await swalAlert.confirm({
+                          title: "Reset Timeline Schedule?",
+                          text: "Restore all timeline events back to standard wedding schedule defaults?",
+                          confirmButtonText: "Yes, Reset to Defaults",
+                        });
+                        if (confirmed) {
+                          weddingStore.resetTimeline();
+                          setTimelineEvents(weddingStore.getTimeline());
+                          swalAlert.toastSuccess("Timeline Reset", "Schedule restored to defaults.");
+                        }
+                      }}
+                      className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Reset Defaults</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newEvent: TimelineEvent = {
+                          id: "tl-" + Date.now(),
+                          time: "09:00 PM",
+                          title: "New Celebration Event",
+                          description: "Description of the event activities and instructions.",
+                          icon: "clock",
+                        };
+                        const updated = [...timelineEvents, newEvent];
+                        setTimelineEvents(updated);
+                        weddingStore.saveTimeline(updated);
+                        swalAlert.toastSuccess("Event Added", "New timeline event added.");
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1b3b5f] text-xs font-bold border border-blue-200 flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Timeline Event</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        weddingStore.saveTimeline(timelineEvents);
+                        swalAlert.toastSuccess("Timeline Saved", "Wedding schedule updated live on the invitation.");
+                      }}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save Timeline</span>
+                    </button>
+                  </div>
+                </div>
+
+                {timelineEvents.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400 text-xs">
+                    No timeline events yet. Click &quot;Add Timeline Event&quot; or &quot;Reset Defaults&quot; above.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {timelineEvents.map((item, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-300 transition-all shadow-2xs space-y-3"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-[#1b3b5f] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="font-serif-title font-bold text-sm text-[#1b3b5f]">
+                              {item.title || `Event #${idx + 1}`}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1 self-end sm:self-auto">
+                            {/* Move Up */}
+                            {idx > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...timelineEvents];
+                                  const temp = updated[idx];
+                                  updated[idx] = updated[idx - 1];
+                                  updated[idx - 1] = temp;
+                                  setTimelineEvents(updated);
+                                  weddingStore.saveTimeline(updated);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors"
+                                title="Move Earlier"
+                              >
+                                ↑
+                              </button>
+                            )}
+                            {/* Move Down */}
+                            {idx < timelineEvents.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...timelineEvents];
+                                  const temp = updated[idx];
+                                  updated[idx] = updated[idx + 1];
+                                  updated[idx + 1] = temp;
+                                  setTimelineEvents(updated);
+                                  weddingStore.saveTimeline(updated);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors"
+                                title="Move Later"
+                              >
+                                ↓
+                              </button>
+                            )}
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const confirmed = await swalAlert.confirmDelete({
+                                  title: "Delete Event?",
+                                  text: `Are you sure you want to remove "${item.title || "this event"}" from the timeline?`,
+                                });
+                                if (confirmed) {
+                                  const updated = timelineEvents.filter((_, i) => i !== idx);
+                                  setTimelineEvents(updated);
+                                  weddingStore.saveTimeline(updated);
+                                  swalAlert.toastSuccess("Event Removed", "Timeline item deleted.");
+                                }
+                              }}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors ml-1 cursor-pointer"
+                              title="Delete Event"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                              Time (e.g. 03:00 PM)
+                            </label>
+                            <input
+                              type="text"
+                              value={item.time}
+                              onChange={(e) => {
+                                const updated = [...timelineEvents];
+                                updated[idx] = { ...updated[idx], time: e.target.value };
+                                setTimelineEvents(updated);
+                              }}
+                              placeholder="03:00 PM"
+                              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-mono font-bold text-[#1b3b5f] focus:outline-none focus:border-[#1b3b5f]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                              Event Title
+                            </label>
+                            <input
+                              type="text"
+                              value={item.title}
+                              onChange={(e) => {
+                                const updated = [...timelineEvents];
+                                updated[idx] = { ...updated[idx], title: e.target.value };
+                                setTimelineEvents(updated);
+                              }}
+                              placeholder="e.g. Holy Matrimony & Sacred Vows"
+                              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:outline-none focus:border-[#1b3b5f]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                              Icon Symbol
+                            </label>
+                            <select
+                              value={item.icon}
+                              onChange={(e) => {
+                                const updated = [...timelineEvents];
+                                updated[idx] = { ...updated[idx], icon: e.target.value };
+                                setTimelineEvents(updated);
+                              }}
+                              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:border-[#1b3b5f] cursor-pointer"
+                            >
+                              <option value="church">Church / Ceremony</option>
+                              <option value="users">Users / Guest Arrival</option>
+                              <option value="camera">Camera / Photography</option>
+                              <option value="wine">Wine / Cocktails</option>
+                              <option value="utensils">Utensils / Dinner Feast</option>
+                              <option value="music">Music / First Dance</option>
+                              <option value="party-popper">Party Popper / Grand Entrance</option>
+                              <option value="clock">Clock / Schedule</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Event Description &amp; Activities
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={item.description}
+                            onChange={(e) => {
+                              const updated = [...timelineEvents];
+                              updated[idx] = { ...updated[idx], description: e.target.value };
+                              setTimelineEvents(updated);
+                            }}
+                            placeholder="Details about what happens during this schedule..."
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs leading-relaxed focus:outline-none focus:border-[#1b3b5f]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      weddingStore.saveTimeline(timelineEvents);
+                      swalAlert.toastSuccess("Timeline Saved", "Wedding schedule updated live on the invitation.");
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1b3b5f] to-[#2e5782] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4 text-amber-200" />
+                    <span>Save Wedding Day Timeline</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* MAIN BACKGROUND WEDDING MUSIC TAB */}
           {activeTab === "music" && (
             <div className="space-y-6 w-full">
@@ -3504,6 +3891,199 @@ export default function AdminPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Dress Code Guidelines (3 Categories: Brides & Grooms, Ninang & Ninong, Guests) */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs min-w-0 max-w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-100">
+                        <Shirt className="w-4 h-4" />
+                      </div>
+                      <h3 className="font-serif-title font-bold text-lg text-[#1b3b5f]">
+                        Dress Code Guidelines &amp; Attire Labels (3 Categories)
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Customize attire labels, dress headings, color palette notes, and etiquette reminders for each group.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const confirmed = await swalAlert.confirm({
+                          title: "Reset Dress Code Presets?",
+                          text: "Restore all 3 dress code guidelines back to initial defaults (Brides and Grooms, Ninang and Ninong, Guest)?",
+                          confirmButtonText: "Yes, Reset Presets",
+                        });
+                        if (confirmed) {
+                          const defaults = getInitialDressCodes();
+                          setDressCodes(defaults);
+                          weddingStore.saveDressCodes(defaults);
+                          swalAlert.toastSuccess("Reset Completed", "Dress code guidelines restored to default presets.");
+                        }
+                      }}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Reset to default dress codes"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Reset Presets</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        weddingStore.saveDressCodes(dressCodes);
+                        swalAlert.toastSuccess("Dress Codes Saved", "Guidelines and labels updated live on the invitation.");
+                      }}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#1b3b5f] to-[#2e5782] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5 text-amber-200" />
+                      <span>Save Dress Codes</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {dressCodes.map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      className="p-5 rounded-2xl border border-slate-200 bg-slate-50/60 flex flex-col justify-between space-y-4 hover:border-blue-300 transition-colors"
+                    >
+                      <div className="space-y-3.5">
+                        {/* Category Badge Label */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[11px] font-bold text-slate-700">
+                              Category Badge Label
+                            </label>
+                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold">
+                              Card {idx + 1}
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            value={item.category}
+                            onChange={(e) => {
+                              const updated = [...dressCodes];
+                              updated[idx] = { ...updated[idx], category: e.target.value };
+                              setDressCodes(updated);
+                            }}
+                            placeholder="e.g. Brides and Grooms / Ninang and Ninong / Guest"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-[#1b3b5f] focus:outline-none focus:border-[#1b3b5f]"
+                          />
+                        </div>
+
+                        {/* Title */}
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Card Title / Attire Heading
+                          </label>
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => {
+                              const updated = [...dressCodes];
+                              updated[idx] = { ...updated[idx], title: e.target.value };
+                              setDressCodes(updated);
+                            }}
+                            placeholder="e.g. Formal Barong & Elegant Ensemble"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:outline-none focus:border-[#1b3b5f]"
+                          />
+                        </div>
+
+                        {/* Subtitle / Palette note */}
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Subtitle / Color Palette Note
+                          </label>
+                          <input
+                            type="text"
+                            value={item.subtitle}
+                            onChange={(e) => {
+                              const updated = [...dressCodes];
+                              updated[idx] = { ...updated[idx], subtitle: e.target.value };
+                              setDressCodes(updated);
+                            }}
+                            placeholder="e.g. Shades of Slate Blue & Midnight Navy"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-[#7094b7] font-medium focus:outline-none focus:border-[#1b3b5f]"
+                          />
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Attire Details &amp; Guidelines
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={item.description}
+                            onChange={(e) => {
+                              const updated = [...dressCodes];
+                              updated[idx] = { ...updated[idx], description: e.target.value };
+                              setDressCodes(updated);
+                            }}
+                            placeholder="Detailed dress guidelines for this group..."
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs leading-relaxed focus:outline-none focus:border-[#1b3b5f]"
+                          />
+                        </div>
+
+                        {/* Gentle Reminder / Etiquette Note */}
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Gentle Reminder / Etiquette Note
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={item.reminder}
+                            onChange={(e) => {
+                              const updated = [...dressCodes];
+                              updated[idx] = { ...updated[idx], reminder: e.target.value };
+                              setDressCodes(updated);
+                            }}
+                            placeholder="e.g. Kindly reserve pure white for the bride..."
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-amber-900 leading-relaxed focus:outline-none focus:border-[#1b3b5f]"
+                          />
+                        </div>
+
+                        {/* Photo / Lookbook URL (Optional) */}
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Lookbook Photo URL / Path (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={item.image || ""}
+                            onChange={(e) => {
+                              const updated = [...dressCodes];
+                              updated[idx] = { ...updated[idx], image: e.target.value };
+                              setDressCodes(updated);
+                            }}
+                            placeholder="/images/sample-dress-ladies.jpg or https://..."
+                            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-600 focus:outline-none focus:border-[#1b3b5f]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      weddingStore.saveDressCodes(dressCodes);
+                      swalAlert.toastSuccess("Dress Codes Saved", "Guidelines and labels updated live on the invitation.");
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1b3b5f] to-[#2e5782] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4 text-amber-200" />
+                    <span>Save All Dress Code Guidelines</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -4181,7 +4761,7 @@ export default function AdminPage() {
                           accept={
                             item.isVideo
                               ? "video/mp4,video/webm,video/ogg,video/quicktime,video/*"
-                              : "image/*"
+                              : "image/png,image/jpeg,image/webp,image/jpg,image/heic,image/heif,image/*"
                           }
                           className="hidden"
                           onChange={(e) => handleMediaFileSelect(item.key, e)}

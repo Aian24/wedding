@@ -59,7 +59,7 @@ export const Footer: React.FC<FooterProps> = ({ onReopenEnvelope }) => {
             className="hover:text-amber-200 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <Mail className="w-3.5 h-3.5 text-[#7094b7]" />
-            <span>Invitation Cover</span>
+            <span>INVITATION COVER</span>
           </button>
           <span>&bull;</span>
           <a href="#hero" className="hover:text-amber-200 transition-colors">

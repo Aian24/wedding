@@ -130,11 +130,17 @@ export const EntourageSection: React.FC = () => {
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
+            <div className="flex flex-wrap justify-center gap-2.5 sm:gap-4">
               {entourage[activeTab].members.map((member) => (
                 <div
                   key={member.id}
-                  className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white via-blue-50/40 to-white border border-blue-100 shadow-2xs hover:border-blue-300 transition-all flex flex-col justify-center text-center group"
+                  className={`p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white via-blue-50/40 to-white border border-blue-100 shadow-2xs hover:border-blue-300 transition-all flex flex-col justify-center text-center group ${
+                    entourage[activeTab].members.length === 1
+                      ? "w-full max-w-sm"
+                      : entourage[activeTab].members.length === 2
+                      ? "w-[calc(50%-0.4rem)] sm:w-[calc(50%-0.5rem)] max-w-[340px]"
+                      : "w-[calc(50%-0.4rem)] sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] max-w-xs"
+                  }`}
                 >
                   <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#7094b7] font-semibold mb-1 group-hover:text-blue-800 transition-colors">
                     {member.role}

@@ -5,6 +5,8 @@ import {
   getInitialThemeColors,
   getInitialEntourage,
   getInitialSiteImages,
+  getInitialDressCodes,
+  getInitialTimeline,
 } from "@/lib/weddingStore";
 
 export async function GET() {
@@ -16,6 +18,8 @@ export async function GET() {
     const themeColors = configs.theme_colors || getInitialThemeColors();
     const entourage = configs.entourage || getInitialEntourage();
     const siteImages = configs.site_images || getInitialSiteImages();
+    const dressCodes = configs.dress_codes || getInitialDressCodes();
+    const timeline = configs.timeline || getInitialTimeline();
 
     // If any config is missing from the DB, seed it in the background
     if (!configs.couple_info) {
@@ -30,6 +34,12 @@ export async function GET() {
     if (!configs.site_images) {
       saveConfig("site_images", siteImages).catch(console.error);
     }
+    if (!configs.dress_codes) {
+      saveConfig("dress_codes", dressCodes).catch(console.error);
+    }
+    if (!configs.timeline) {
+      saveConfig("timeline", timeline).catch(console.error);
+    }
 
     return NextResponse.json({
       success: true,
@@ -37,6 +47,8 @@ export async function GET() {
       themeColors,
       entourage,
       siteImages,
+      dressCodes,
+      timeline,
     });
   } catch (error: any) {
     console.error("GET /api/config error:", error);
@@ -48,6 +60,8 @@ export async function GET() {
       themeColors: getInitialThemeColors(),
       entourage: getInitialEntourage(),
       siteImages: getInitialSiteImages(),
+      dressCodes: getInitialDressCodes(),
+      timeline: getInitialTimeline(),
     });
   }
 }
