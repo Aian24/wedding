@@ -193,7 +193,8 @@ export default function AdminPage() {
     return () => window.removeEventListener("wedding_images_updated", handleImagesUpdated);
   }, []);
 
-  const loadAllData = () => {
+  const loadAllData = async () => {
+    // 1. Initial instantaneous state from local cache
     setRsvps(weddingStore.getRsvps());
     setParties(weddingStore.getParties());
     setColors(weddingStore.getThemeColors());
@@ -201,15 +202,32 @@ export default function AdminPage() {
     setCoupleInfo(weddingStore.getCoupleInfo());
     setSiteImages(weddingStore.getSiteImages());
 
-    if (typeof window !== "undefined") {
-      const savedWishes = localStorage.getItem("aian_dang_wedding_guestbook");
-      if (savedWishes) {
-        try {
-          setWishes(JSON.parse(savedWishes));
-        } catch {
-          // ignore
-        }
+    // 2. Fetch live data from Neon PostgreSQL database
+    try {
+      const [configRes, guestsRes, rsvpsRes, wishesRes] = await Promise.all([
+        fetch("/api/config").then((r) => r.json()).catch(() => null),
+        fetch("/api/guests").then((r) => r.json()).catch(() => null),
+        fetch("/api/rsvp").then((r) => r.json()).catch(() => null),
+        fetch("/api/wishes").then((r) => r.json()).catch(() => null),
+      ]);
+
+      if (configRes && configRes.success) {
+        if (configRes.coupleInfo) setCoupleInfo(configRes.coupleInfo);
+        if (configRes.themeColors) setColors(configRes.themeColors);
+        if (configRes.entourage) setEntourage(configRes.entourage);
+        if (configRes.siteImages) setSiteImages(configRes.siteImages);
       }
+      if (guestsRes && guestsRes.success && Array.isArray(guestsRes.parties)) {
+        setParties(guestsRes.parties);
+      }
+      if (rsvpsRes && rsvpsRes.success && Array.isArray(rsvpsRes.rsvps)) {
+        setRsvps(rsvpsRes.rsvps);
+      }
+      if (wishesRes && wishesRes.success && Array.isArray(wishesRes.wishes)) {
+        setWishes(wishesRes.wishes);
+      }
+    } catch (err) {
+      console.warn("Neon DB fetch error in admin portal:", err);
     }
   };
 

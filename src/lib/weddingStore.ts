@@ -291,6 +291,11 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(parties));
     window.dispatchEvent(new Event("wedding_parties_updated"));
+    fetch("/api/guests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parties }),
+    }).catch(console.error);
   },
 
   addParty(party: Omit<InvitedParty, "id">): InvitedParty {
@@ -301,6 +306,11 @@ export const weddingStore = {
     };
     const updated = [newParty, ...parties];
     this.saveParties(updated);
+    fetch("/api/guests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newParty),
+    }).catch(console.error);
     return newParty;
   },
 
@@ -308,12 +318,23 @@ export const weddingStore = {
     const parties = this.getParties();
     const updated = parties.map((p) => (p.id === id ? { ...p, ...updates, lastUpdated: new Date().toLocaleString() } : p));
     this.saveParties(updated);
+    const target = updated.find((p) => p.id === id);
+    if (target) {
+      fetch("/api/guests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(target),
+      }).catch(console.error);
+    }
   },
 
   deleteParty(id: string) {
     const parties = this.getParties();
     const updated = parties.filter((p) => p.id !== id);
     this.saveParties(updated);
+    fetch(`/api/guests?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch(console.error);
   },
 
   findPartyByGuestName(nameQuery: string): InvitedParty | null {
@@ -350,6 +371,11 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(colors));
     window.dispatchEvent(new Event("wedding_theme_updated"));
+    fetch("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "theme_colors", data: colors }),
+    }).catch(console.error);
   },
 
   addThemeColor(color: Omit<ThemeColor, "id">): ThemeColor {
@@ -429,6 +455,11 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.COUPLE_INFO, JSON.stringify(info));
     window.dispatchEvent(new Event("wedding_couple_updated"));
+    fetch("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "couple_info", data: info }),
+    }).catch(console.error);
   },
 
   // Entourage
@@ -451,6 +482,11 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.ENTOURAGE, JSON.stringify(entourage));
     window.dispatchEvent(new Event("wedding_entourage_updated"));
+    fetch("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "entourage", data: entourage }),
+    }).catch(console.error);
   },
 
   addEntourageMember(categoryIndex: number, member: { role: string; name: string }): EntourageMember | null {
@@ -498,6 +534,8 @@ export const weddingStore = {
   clearAllGuestData() {
     this.saveParties([]);
     this.saveRsvps([]);
+    fetch("/api/guests?clearAll=true", { method: "DELETE" }).catch(console.error);
+    fetch("/api/rsvp?clearAll=true", { method: "DELETE" }).catch(console.error);
   },
 
   // RSVPs
@@ -530,6 +568,11 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.RSVPS, JSON.stringify(rsvps));
     window.dispatchEvent(new Event("wedding_rsvps_updated"));
+    fetch("/api/rsvp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rsvps }),
+    }).catch(console.error);
   },
 
   addRsvp(entry: Omit<RsvpEntry, "id" | "submittedAt">): RsvpEntry {
@@ -541,6 +584,12 @@ export const weddingStore = {
     };
     const updated = [newEntry, ...rsvps];
     this.saveRsvps(updated);
+
+    fetch("/api/rsvp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newEntry),
+    }).catch(console.error);
 
     // If matching party found, update party member states too
     if (entry.partyId) {
@@ -569,12 +618,20 @@ export const weddingStore = {
     const rsvps = this.getRsvps();
     const updated = rsvps.map((r) => (r.id === id ? { ...r, ...updates } : r));
     this.saveRsvps(updated);
+    fetch("/api/rsvp", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    }).catch(console.error);
   },
 
   deleteRsvp(id: string) {
     const rsvps = this.getRsvps();
     const updated = rsvps.filter((r) => r.id !== id);
     this.saveRsvps(updated);
+    fetch(`/api/rsvp?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch(console.error);
   },
 
   // Registry
@@ -640,6 +697,11 @@ export const weddingStore = {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(images));
     window.dispatchEvent(new Event("wedding_images_updated"));
+    fetch("/api/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "site_images", data: images }),
+    }).catch(console.error);
   },
 
   updateSiteImage(key: keyof SiteImages, url: string) {
@@ -656,4 +718,55 @@ export const weddingStore = {
   resetAllSiteImages() {
     this.saveSiteImages(getInitialSiteImages());
   },
+
+  // Global Neon Database Hydration
+  async syncFromDb() {
+    if (typeof window === "undefined") return;
+    try {
+      const [configRes, guestsRes, rsvpsRes] = await Promise.all([
+        fetch("/api/config").then((r) => r.json()).catch(() => null),
+        fetch("/api/guests").then((r) => r.json()).catch(() => null),
+        fetch("/api/rsvp").then((r) => r.json()).catch(() => null),
+      ]);
+
+      if (configRes && configRes.success) {
+        if (configRes.coupleInfo) {
+          localStorage.setItem(STORAGE_KEYS.COUPLE_INFO, JSON.stringify(configRes.coupleInfo));
+          window.dispatchEvent(new Event("wedding_couple_updated"));
+        }
+        if (configRes.themeColors) {
+          localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(configRes.themeColors));
+          window.dispatchEvent(new Event("wedding_theme_updated"));
+        }
+        if (configRes.entourage) {
+          localStorage.setItem(STORAGE_KEYS.ENTOURAGE, JSON.stringify(configRes.entourage));
+          window.dispatchEvent(new Event("wedding_entourage_updated"));
+        }
+        if (configRes.siteImages) {
+          localStorage.setItem(STORAGE_KEYS.SITE_IMAGES, JSON.stringify(configRes.siteImages));
+          window.dispatchEvent(new Event("wedding_images_updated"));
+        }
+      }
+
+      if (guestsRes && guestsRes.success && Array.isArray(guestsRes.parties)) {
+        localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(guestsRes.parties));
+        window.dispatchEvent(new Event("wedding_parties_updated"));
+      }
+
+      if (rsvpsRes && rsvpsRes.success && Array.isArray(rsvpsRes.rsvps)) {
+        localStorage.setItem(STORAGE_KEYS.RSVPS, JSON.stringify(rsvpsRes.rsvps));
+        window.dispatchEvent(new Event("wedding_rsvps_updated"));
+      }
+    } catch (err) {
+      console.warn("Neon DB sync skipped:", err);
+    }
+  },
 };
+
+// Automatic hydration from Neon PostgreSQL on client load
+if (typeof window !== "undefined") {
+  setTimeout(() => {
+    weddingStore.syncFromDb().catch(() => {});
+  }, 100);
+}
+

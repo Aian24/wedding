@@ -26,24 +26,38 @@ export const WishesGuestbookSection: React.FC = () => {
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    // 1. Initial cached state from localStorage
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("aian_dang_wedding_guestbook");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
-            // Filter out old default mock wishes if they exist in localStorage
             const filtered = parsed.filter(
               (w) => w.id !== "w-1" && w.id !== "w-2" && w.id !== "w-3"
             );
             setWishes(filtered);
-            localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(filtered));
           }
         } catch {
           // ignore
         }
       }
     }
+
+    // 2. Fetch live wishes from Neon PostgreSQL
+    fetch("/api/wishes")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.wishes)) {
+          setWishes(data.wishes);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(data.wishes));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch live wishes from Neon DB:", err);
+      });
   }, []);
 
   const handlePostWish = (e: React.FormEvent) => {
@@ -67,7 +81,16 @@ export const WishesGuestbookSection: React.FC = () => {
 
     const updated = [newWish, ...wishes];
     setWishes(updated);
-    localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(updated));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(updated));
+    }
+
+    // Persist to Neon DB
+    fetch("/api/wishes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newWish),
+    }).catch(console.error);
 
     setName("");
     setRelationship("");
@@ -98,7 +121,17 @@ export const WishesGuestbookSection: React.FC = () => {
     );
     setWishes(updated);
     setLikedIds({ ...likedIds, [id]: true });
-    localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(updated));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("aian_dang_wedding_guestbook", JSON.stringify(updated));
+    }
+
+    // Persist like to Neon DB
+    fetch("/api/wishes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "like", id }),
+    }).catch(console.error);
+
     swalAlert.toastSuccess("Heart Sent!", "Thank you for spreading the love.");
   };
 
