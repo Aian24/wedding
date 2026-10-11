@@ -160,6 +160,7 @@ export interface SiteImages {
   receptionVenue: string;
   ladiesAttire: string;
   menAttire: string;
+  guestAttire: string;
   floralCorner: string;
   floralDivider: string;
 }
@@ -189,6 +190,7 @@ export const getInitialSiteImages = (): SiteImages => {
     receptionVenue: "/images/reception.jpg",
     ladiesAttire: "/images/sample-dress-ladies.jpg",
     menAttire: "/images/sample-attire-men.jpg",
+    guestAttire: "/images/sample-attire-men.jpg",
     floralCorner: "/images/floral-corner.jpg",
     floralDivider: "/images/floral-divider.jpg",
   };
@@ -819,6 +821,15 @@ export const weddingStore = {
     const current = this.getSiteImages();
     current[key] = url;
     this.saveSiteImages(current);
+
+    // Keep dress code cards in sync if attire or hero poster is updated
+    if (key === "guestAttire") {
+      this.updateDressCode("dc-guest", { image: url });
+    } else if (key === "ladiesAttire") {
+      this.updateDressCode("dc-ninang-ninong", { image: url });
+    } else if (key === "heroPoster") {
+      this.updateDressCode("dc-bride-groom", { image: url });
+    }
   },
 
   resetSiteImage(key: keyof SiteImages) {

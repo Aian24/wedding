@@ -161,7 +161,16 @@ export const DressCodeSection: React.FC = () => {
                 ? siteImages.heroPoster
                 : index === 1
                 ? siteImages.ladiesAttire
-                : siteImages.menAttire;
+                : (siteImages.guestAttire || siteImages.menAttire);
+
+            const displayImage =
+              index === 2 && siteImages.guestAttire
+                ? siteImages.guestAttire
+                : index === 1 && siteImages.ladiesAttire
+                ? siteImages.ladiesAttire
+                : index === 0 && siteImages.heroPoster
+                ? siteImages.heroPoster
+                : (item.image || fallbackImage);
 
             return (
               <motion.div
@@ -174,7 +183,7 @@ export const DressCodeSection: React.FC = () => {
               >
                 <div className="relative aspect-[3/4] w-full overflow-hidden group bg-slate-100">
                   <Image
-                    src={item.image || fallbackImage}
+                    src={displayImage}
                     alt={item.title}
                     fill
                     unoptimized
