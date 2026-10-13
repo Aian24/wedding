@@ -188,9 +188,9 @@ export const getInitialSiteImages = (): SiteImages => {
     envelopeCover: "/images/envelope-cover.jpg",
     ceremonyVenue: "/images/ceremony.jpg",
     receptionVenue: "/images/reception.jpg",
-    ladiesAttire: "/images/sample-dress-ladies.jpg",
-    menAttire: "/images/sample-attire-men.jpg",
-    guestAttire: "/images/sample-attire-men.jpg",
+    ladiesAttire: "/images/attire-bridesmaids-groomsmen.jpg",
+    menAttire: "/images/attire-ninang-ninong.jpg",
+    guestAttire: "/images/attire-guests.jpg",
     floralCorner: "/images/floral-corner.jpg",
     floralDivider: "/images/floral-divider.jpg",
   };
@@ -284,30 +284,30 @@ export const getInitialThemeColors = (): ThemeColor[] => {
 export const getInitialDressCodes = (): DressCodeItem[] => [
   {
     id: "dc-bride-groom",
-    category: "Brides and Grooms",
-    title: "Bridal Gown & Bespoke Groom Suit",
-    subtitle: "Pure Pearl White & Midnight Navy Tuxedo",
-    description: "The bride is adorned in a bespoke pure pearl white bridal gown, while the groom dons a tailored Midnight Navy 2-piece suit and tuxedo.",
-    reminder: "Kindly note that pure white is strictly reserved for our radiant bride Dang.",
-    image: "/images/hero.jpg",
+    category: "Bridesmaids & Groomsmen",
+    title: "Bridesmaids & Groomsmen",
+    subtitle: "Formal Long Dress in Dusty Blue • White Longsleeve & Navy Suspender",
+    description: "Bridesmaids: Formal long dress in shade of dusty blue. Any formal long dress style is welcome.\n\nGroomsmen: White longsleeve, navy blue bow tie and suspender with black pants.",
+    reminder: "Bow tie and suspender is provided by our couple.",
+    image: "/images/attire-bridesmaids-groomsmen.jpg",
   },
   {
     id: "dc-ninang-ninong",
     category: "Ninang and Ninong",
-    title: "Principal Sponsors: Elegant Long Gowns & Piña Barong",
-    subtitle: "Shades of Slate Blue, Midnight Navy & Formal Piña",
-    description: "Ninangs: Floor-length formal evening gowns in slate blue or midnight navy. Ninongs: Traditional formal Embroidered Piña Barong Tagalog with dark trousers.",
+    title: "Principal Sponsors: Filipiniana / Gown & Barong Tagalog",
+    subtitle: "Midnight Blue, Slate Blue & Navy Blue",
+    description: "Ninang: Formal dress or Filipiniana in the shade of midnight blue, slate blue or navy blue.\n\nNinong: Formal suit or Barong Tagalog.",
     reminder: "Principal sponsors are requested to arrive promptly by 2:30 PM for the processional lineup.",
-    image: "/images/sample-dress-ladies.jpg",
+    image: "/images/attire-ninang-ninong.jpg",
   },
   {
     id: "dc-guest",
-    category: "Guest",
-    title: "Cherished Guests: Formal & Semi-Formal Attire",
-    subtitle: "Dusty Blue, Slate, Navy, Ice Blue & Champagne",
-    description: "Ladies: Floor-length or midi formal dresses in our official wedding palette. Gentlemen: Tailored suits or Barong Tagalog with dress trousers.",
-    reminder: "Gentle Reminder: We kindly request all lovely guests to refrain from wearing all-white, ivory, or cream dresses.",
-    image: "/images/sample-attire-men.jpg",
+    category: "Guests",
+    title: "Guests: Semi-Casual Attire",
+    subtitle: "Midnight Blue, Navy Blue, Slate Blue, Dusty Blue & Ice Blue",
+    description: "For Ladies: Semi-casual dresses or coordinates in our official blue wedding palette.\n\nFor Gentlemen: Semi-casual button-down or polo shirts with chinos or dress trousers.",
+    reminder: "Gentle Reminder: We kindly request all lovely guests to refrain from wearing all-white, ivory, or cream attire.",
+    image: "/images/attire-guests.jpg",
   },
 ];
 
@@ -331,11 +331,8 @@ export const isLocalEnvironment = (): boolean => {
 
 export const shouldSyncToNeon = (): boolean => {
   if (typeof window === "undefined") return true;
-  // On production (e.g., deployed on Vercel), always push directly to Neon cloud DB
-  if (!isLocalEnvironment()) return true;
-  // On localhost, keep changes in local storage by default to protect Vercel
-  // Only push if explicitly enabled by the user in the admin header toggle
-  return localStorage.getItem("admin_sync_to_neon") === "true";
+  // Always sync to Neon cloud database so changes persist across page reloads and devices.
+  return localStorage.getItem("admin_sync_to_neon") !== "false";
 };
 
 export const setLocalNeonSync = (enabled: boolean) => {
@@ -822,14 +819,15 @@ export const weddingStore = {
     current[key] = url;
     this.saveSiteImages(current);
 
-    // Keep dress code cards in sync if attire or hero poster is updated
-    if (key === "guestAttire") {
-      this.updateDressCode("dc-guest", { image: url });
-    } else if (key === "ladiesAttire") {
-      this.updateDressCode("dc-ninang-ninong", { image: url });
-    } else if (key === "heroPoster") {
+    // Keep dress code cards in sync if attire lookbook photos are updated
+    if (key === "ladiesAttire") {
       this.updateDressCode("dc-bride-groom", { image: url });
+    } else if (key === "menAttire") {
+      this.updateDressCode("dc-ninang-ninong", { image: url });
+    } else if (key === "guestAttire") {
+      this.updateDressCode("dc-guest", { image: url });
     }
+    // Hero background poster (heroPoster) must NEVER affect dress code cards
   },
 
   resetSiteImage(key: keyof SiteImages) {

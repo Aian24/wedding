@@ -158,19 +158,20 @@ export const DressCodeSection: React.FC = () => {
           {dressCodes.map((item, index) => {
             const fallbackImage =
               index === 0
-                ? siteImages.heroPoster
+                ? (siteImages.ladiesAttire || "/images/attire-bridesmaids-groomsmen.jpg")
                 : index === 1
-                ? siteImages.ladiesAttire
-                : (siteImages.guestAttire || siteImages.menAttire);
+                ? (siteImages.menAttire || "/images/attire-ninang-ninong.jpg")
+                : (siteImages.guestAttire || "/images/attire-guests.jpg");
+
+            // Guard: Hero background photo (couple portrait) must NEVER appear on dress code cards
+            const isHeroBgImage =
+              item.image &&
+              (item.image === siteImages.heroPoster ||
+                item.image.includes("/images/hero.jpg") ||
+                item.image.includes("heroPoster"));
 
             const displayImage =
-              index === 2 && siteImages.guestAttire
-                ? siteImages.guestAttire
-                : index === 1 && siteImages.ladiesAttire
-                ? siteImages.ladiesAttire
-                : index === 0 && siteImages.heroPoster
-                ? siteImages.heroPoster
-                : (item.image || fallbackImage);
+              item.image && !isHeroBgImage ? item.image : fallbackImage;
 
             return (
               <motion.div
