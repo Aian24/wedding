@@ -4127,13 +4127,13 @@ export default function AdminPage() {
                             return (
                               <div className="space-y-2 mb-2">
                                 {currentPhoto && (
-                                  <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs">
+                                  <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs">
                                     <Image
                                       src={currentPhoto}
                                       alt="Lookbook Photo"
                                       fill
                                       unoptimized
-                                      className="object-cover"
+                                      className="object-contain p-1"
                                     />
                                   </div>
                                 )}
@@ -4701,26 +4701,6 @@ export default function AdminPage() {
                     isVideo: false,
                   },
                   {
-                    key: "envelopeCover" as const,
-                    title: "Envelope Poster / Fallback Cover",
-                    category: "Envelope Poster",
-                    desc: "Displayed as the pre-play poster or fallback cover behind the opening envelope video.",
-                    recommended: "JPG or PNG, recommended 1200 × 900 px",
-                    aspect: "aspect-[4/3] max-h-56",
-                    contain: false,
-                    isVideo: false,
-                  },
-                  {
-                    key: "heroPoster" as const,
-                    title: "Hero Background Poster / Photo",
-                    category: "Hero Banner",
-                    desc: "Primary couple portrait used as video pre-load poster and mobile banner (Does NOT affect dress codes).",
-                    recommended: "JPG or PNG, recommended 1920 × 1080 px",
-                    aspect: "aspect-video max-h-56",
-                    contain: false,
-                    isVideo: false,
-                  },
-                  {
                     key: "ceremonyVenue" as const,
                     title: "Ceremony Church / Chapel Photo",
                     category: "Wedding Details",
@@ -4745,9 +4725,9 @@ export default function AdminPage() {
                     title: "Bridesmaids & Groomsmen Dress Code",
                     category: "Attire Lookbook",
                     desc: "Attire lookbook photo displayed on Card 1 (Bridesmaids & Groomsmen) in the Dress Code section.",
-                    recommended: "JPG or PNG, recommended 800 × 1060 px (portrait)",
-                    aspect: "aspect-[3/4] max-h-64",
-                    contain: false,
+                    recommended: "JPG or PNG, full graphic or landscape",
+                    aspect: "aspect-[4/3] max-h-60",
+                    contain: true,
                     isVideo: false,
                   },
                   {
@@ -4755,9 +4735,9 @@ export default function AdminPage() {
                     title: "Ninang & Ninong (Principal Sponsors) Attire",
                     category: "Attire Lookbook",
                     desc: "Formal Filipiniana & Barong Tagalog lookbook photo displayed on Card 2 (Ninang & Ninong) in the Dress Code section.",
-                    recommended: "JPG or PNG, recommended 800 × 1060 px (portrait)",
-                    aspect: "aspect-[3/4] max-h-64",
-                    contain: false,
+                    recommended: "JPG or PNG, full graphic or landscape",
+                    aspect: "aspect-[4/3] max-h-60",
+                    contain: true,
                     isVideo: false,
                   },
                   {
@@ -4765,9 +4745,9 @@ export default function AdminPage() {
                     title: "Guests' Dress Code (Semi-Casual Attire)",
                     category: "Attire Lookbook",
                     desc: "Semi-casual attire lookbook photo displayed on Card 3 (Guests) in the Dress Code section.",
-                    recommended: "JPG or PNG, recommended 800 × 1060 px (portrait)",
-                    aspect: "aspect-[3/4] max-h-64",
-                    contain: false,
+                    recommended: "JPG or PNG, full graphic or landscape",
+                    aspect: "aspect-[4/3] max-h-60",
+                    contain: true,
                     isVideo: false,
                   },
                   {

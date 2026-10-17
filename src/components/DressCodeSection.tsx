@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Copy, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Copy, Check, Maximize2, X } from "lucide-react";
 import { weddingStore, ThemeColor, DressCodeItem } from "@/lib/weddingStore";
 import { weddingData } from "@/data/weddingData";
 import { useSiteImages } from "@/hooks/useSiteImages";
@@ -12,6 +12,11 @@ export const DressCodeSection: React.FC = () => {
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [colors, setColors] = useState<ThemeColor[]>([]);
   const [dressCodes, setDressCodes] = useState<DressCodeItem[]>([]);
+  const [selectedImage, setSelectedImage] = useState<{
+    src: string;
+    title: string;
+    category: string;
+  } | null>(null);
   const siteImages = useSiteImages();
 
   useEffect(() => {
@@ -31,6 +36,14 @@ export const DressCodeSection: React.FC = () => {
       window.removeEventListener("wedding_theme_updated", handleThemeUpdate);
       window.removeEventListener("wedding_dress_codes_updated", handleDressUpdate);
     };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedImage(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const handleCopyHex = (hex: string) => {
@@ -182,17 +195,50 @@ export const DressCodeSection: React.FC = () => {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="glass-card rounded-3xl overflow-hidden border border-blue-100 shadow-xl flex flex-col justify-between"
               >
-                <div className="relative aspect-[3/4] w-full overflow-hidden group bg-slate-100">
+                {/* Category Header Bar */}
+                <div className="px-4 sm:px-5 pt-3.5 pb-2.5 flex items-center justify-between border-b border-blue-50/80 bg-white/70">
+                  <span className="px-3 py-1 rounded-full bg-[#1b3b5f] text-white text-[11px] font-semibold uppercase tracking-wider shadow-2xs border border-amber-200/40">
+                    {item.category}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedImage({
+                        src: displayImage,
+                        title: item.title,
+                        category: item.category,
+                      })
+                    }
+                    className="text-[10px] sm:text-[11px] text-[#7094b7] hover:text-[#1b3b5f] font-medium flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <Maximize2 className="w-3 h-3" />
+                    <span>View Full</span>
+                  </button>
+                </div>
+
+                {/* Fully Zoomed-Out Image Container (Shows 100% of the image without cropping) */}
+                <div
+                  onClick={() =>
+                    setSelectedImage({
+                      src: displayImage,
+                      title: item.title,
+                      category: item.category,
+                    })
+                  }
+                  className="relative aspect-[4/3] w-full overflow-hidden group bg-white cursor-pointer border-b border-blue-50"
+                  title="Click to view full image"
+                >
                   <Image
                     src={displayImage}
                     alt={item.title}
                     fill
                     unoptimized
-                    className="object-cover group-hover:scale-103 transition-transform duration-700"
+                    className="object-contain p-2 sm:p-2.5 transition-transform duration-500 group-hover:scale-102"
                   />
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 rounded-full bg-[#1b3b5f]/90 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-md border border-amber-200/50">
-                      {item.category}
+                  <div className="absolute inset-0 bg-[#1b3b5f]/0 group-hover:bg-[#1b3b5f]/5 transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-xs shadow-md">
+                      <Maximize2 className="w-3.5 h-3.5 text-amber-200" />
+                      <span>View Full Image</span>
                     </span>
                   </div>
                 </div>
@@ -205,7 +251,7 @@ export const DressCodeSection: React.FC = () => {
                     <p className="text-xs text-[#7094b7] font-semibold uppercase tracking-wider mb-2">
                       {item.subtitle}
                     </p>
-                    <p className="text-xs sm:text-sm text-slate-600 font-light leading-relaxed mb-4">
+                    <p className="text-xs sm:text-sm text-slate-600 font-light leading-relaxed mb-4 whitespace-pre-line">
                       {item.description}
                     </p>
                   </div>
@@ -220,6 +266,59 @@ export const DressCodeSection: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Lightbox Modal for Full Zoomed Image */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedImage(null)}
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl w-full max-h-[92vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-[#f8fafc]">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#7094b7]">
+                    {selectedImage.category}
+                  </span>
+                  <h4 className="font-serif-title text-base sm:text-lg font-bold text-[#1b3b5f]">
+                    {selectedImage.title}
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Image Display */}
+              <div className="relative w-full h-[65vh] sm:h-[75vh] bg-white p-3 sm:p-5">
+                <Image
+                  src={selectedImage.src}
+                  alt={selectedImage.title}
+                  fill
+                  unoptimized
+                  className="object-contain"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
