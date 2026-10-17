@@ -121,14 +121,16 @@ export const HeroSection: React.FC = () => {
             {coupleInfo.groomNickname} <span className="font-script text-3xl sm:text-5xl lg:text-6xl text-amber-200 lowercase">&amp;</span> {coupleInfo.brideNickname}
           </motion.h1>
 
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="text-[11px] sm:text-xs font-light tracking-[0.2em] uppercase text-slate-200 mb-3.5 sm:mb-4"
+            className="text-[11px] sm:text-xs font-light tracking-[0.2em] uppercase text-slate-200 mb-3.5 sm:mb-4 flex flex-col items-center justify-center gap-0.5 text-center"
           >
-            {coupleInfo.groomName} &amp; {coupleInfo.brideName}
-          </motion.p>
+            <span>{coupleInfo.groomName}</span>
+            <span className="font-serif-title text-xs sm:text-sm text-amber-200/90">&amp;</span>
+            <span>{coupleInfo.brideName}</span>
+          </motion.div>
 
           {/* Date & Location Pills */}
           <motion.div

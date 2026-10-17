@@ -138,7 +138,7 @@ export const OpeningEnvelope: React.FC<OpeningEnvelopeProps> = ({ onOpen, isOpen
           }
           transition={{ duration: 0.7, ease: "easeOut" }}
           onClick={handleCardClick}
-          className="relative w-full max-w-[620px] sm:max-w-[700px] md:max-w-[760px] bg-[#fbf9f5] rounded-3xl sm:rounded-[36px] p-6 sm:p-10 shadow-[0_25px_80px_rgba(27,59,95,0.2),0_10px_25px_rgba(0,0,0,0.06)] border border-[#e8e2d5] cursor-pointer flex flex-col items-center justify-between gap-5 sm:gap-6 overflow-hidden group transition-all duration-300 hover:shadow-[0_30px_90px_rgba(27,59,95,0.25)] my-auto"
+          className="relative w-full max-w-[620px] sm:max-w-[700px] md:max-w-[760px] min-h-[70vh] sm:min-h-0 bg-[#fbf9f5] rounded-3xl sm:rounded-[36px] p-6 sm:p-10 shadow-[0_25px_80px_rgba(27,59,95,0.2),0_10px_25px_rgba(0,0,0,0.06)] border border-[#e8e2d5] cursor-pointer flex flex-col items-center justify-between gap-5 sm:gap-6 overflow-hidden group transition-all duration-300 hover:shadow-[0_30px_90px_rgba(27,59,95,0.25)] my-auto"
         >
           {/* Top Header: Dynamic Invitation Title & Date */}
           <div className="text-center pt-2 sm:pt-3 z-20">
@@ -150,9 +150,9 @@ export const OpeningEnvelope: React.FC<OpeningEnvelopeProps> = ({ onOpen, isOpen
             </p>
           </div>
 
-          {/* Center Realistic Envelope with Dynamic Video - Widescreen & Prominent */}
-          <div className="relative w-full flex items-center justify-center">
-            <div className="relative w-full aspect-video max-h-[380px] sm:max-h-[430px] rounded-2xl overflow-hidden shadow-md group-hover:scale-[1.01] transition-transform duration-500 bg-slate-900">
+          {/* Center Realistic Envelope with Dynamic Video - Full Height on Mobile */}
+          <div className="relative w-full flex-1 flex items-center justify-center my-auto">
+            <div className="relative w-full aspect-[3/4] sm:aspect-video max-h-[520px] sm:max-h-[430px] rounded-2xl overflow-hidden shadow-md group-hover:scale-[1.01] transition-transform duration-500 bg-slate-900">
               <video
                 ref={videoRef}
                 key={siteImages.invitationVideo}

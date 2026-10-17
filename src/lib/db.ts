@@ -251,7 +251,7 @@ export async function clearAllRsvpsFromDb() {
 export async function getWishesFromDb() {
   await ensureTables();
   const rows = await sql`
-    SELECT id, name, relationship, message, likes, date
+    SELECT id, name, relationship, message, likes, date, created_at
     FROM guestbook_wishes
     ORDER BY created_at DESC;
   `;
@@ -267,11 +267,15 @@ export async function saveWishToDb(wish: {
   date?: string;
 }) {
   await ensureTables();
+  const dateVal =
+    wish.date && wish.date !== "Just now"
+      ? wish.date
+      : new Date().toISOString();
   await sql`
     INSERT INTO guestbook_wishes (id, name, relationship, message, likes, date)
     VALUES (
       ${wish.id}, ${wish.name}, ${wish.relationship || "Cherished Guest"},
-      ${wish.message}, ${wish.likes || 1}, ${wish.date || "Just now"}
+      ${wish.message}, ${wish.likes || 1}, ${dateVal}
     )
     ON CONFLICT (id) DO UPDATE SET
       likes = EXCLUDED.likes,

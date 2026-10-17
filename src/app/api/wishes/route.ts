@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       relationship: (relationship && relationship.trim()) || "Cherished Guest",
       message: message.trim(),
       likes: 1,
-      date: "Just now",
+      date: new Date().toISOString(),
     };
 
     await saveWishToDb(newWish);

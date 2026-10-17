@@ -15,6 +15,78 @@ interface Wish {
   message: string;
   likes: number;
   date: string;
+  created_at?: string;
+}
+
+// Dynamically formats date into human relative time ("Just now", "25m ago", "2 hours ago", "2 days ago")
+function formatWishTime(dateStr?: string, createdAt?: string, id?: string): string {
+  let dateObj: Date | null = null;
+
+  // 1. Prioritize real database timestamp
+  if (createdAt) {
+    const d = new Date(createdAt);
+    if (!isNaN(d.getTime())) {
+      dateObj = d;
+    }
+  }
+
+  // 2. Parse dateStr if it's an ISO date or timestamp (and not static "Just now")
+  if (!dateObj && dateStr && dateStr !== "Just now") {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      dateObj = d;
+    }
+  }
+
+  // 3. Fallback: Parse timestamp millisecond value embedded in wish ID ("w-1729...")
+  if (!dateObj && id && id.startsWith("w-")) {
+    const num = parseInt(id.replace("w-", ""), 10);
+    if (!isNaN(num) && num > 1600000000000 && num < 2500000000000) {
+      dateObj = new Date(num);
+    }
+  }
+
+  if (!dateObj) {
+    return dateStr || "Just now";
+  }
+
+  const diffMs = Date.now() - dateObj.getTime();
+
+  // Posted under 1 minute ago (or minor clock skew)
+  if (diffMs < 60 * 1000) {
+    return "Just now";
+  }
+
+  const diffMinutes = Math.floor(diffMs / (60 * 1000));
+  const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  }
+  if (diffHours < 24) {
+    return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
+  }
+  if (diffDays === 1) {
+    return "1 day ago";
+  }
+  if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  }
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+  }
+  if (diffDays < 365) {
+    const months = Math.floor(diffDays / 30);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+  }
+
+  return dateObj.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export const WishesGuestbookSection: React.FC = () => {
@@ -76,7 +148,7 @@ export const WishesGuestbookSection: React.FC = () => {
       relationship: relationship.trim() || "Cherished Guest",
       message: message.trim(),
       likes: 1,
-      date: "Just now",
+      date: new Date().toISOString(),
     };
 
     const updated = [newWish, ...wishes];
@@ -286,7 +358,7 @@ export const WishesGuestbookSection: React.FC = () => {
                         <p className="text-[10px] text-slate-400 mt-0.5">{item.relationship}</p>
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate-400">{item.date}</span>
+                    <span className="text-[10px] text-slate-400">{formatWishTime(item.date, item.created_at, item.id)}</span>
                   </div>
 
                   <p className="text-xs text-slate-600 font-light leading-relaxed italic mb-4">
