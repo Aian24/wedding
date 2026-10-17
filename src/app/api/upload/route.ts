@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
+export const maxDuration = 120; // 2 minutes for mobile video uploads
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -30,18 +32,24 @@ export async function POST(req: NextRequest) {
       ".mov",
       ".m4v",
       ".ogg",
+      ".heic",
+      ".heif",
     ];
 
     let safeExt = allowedExts.includes(lowerExt) ? lowerExt : "";
     if (!safeExt) {
-      if (file.type.startsWith("video/")) {
-        safeExt = ".mp4";
+      if (file.type.startsWith("video/") || file.type === "video/quicktime") {
+        safeExt = lowerExt === ".mov" ? ".mov" : ".mp4";
+      } else if (file.type === "image/png") {
+        safeExt = ".png";
+      } else if (file.type === "image/webp") {
+        safeExt = ".webp";
       } else {
         safeExt = ".jpg";
       }
     }
 
-    // Try writing to public/uploads (local development)
+    // Try writing to public/uploads (local development or persistent filesystem)
     try {
       const uploadsDir = path.join(process.cwd(), "public", "uploads");
       if (!fs.existsSync(uploadsDir)) {
@@ -56,20 +64,29 @@ export async function POST(req: NextRequest) {
       const publicUrl = `/uploads/${fileName}`;
       return NextResponse.json({ success: true, url: publicUrl });
     } catch (fsError: any) {
-      // In serverless environments like Vercel, the local filesystem is read-only.
-      // Gracefully return base64 data URI so uploads succeed seamlessly on all devices and cloud hosts.
-      const mime =
-        file.type ||
-        (safeExt === ".png"
-          ? "image/png"
-          : safeExt === ".webp"
-          ? "image/webp"
-          : safeExt === ".mp4"
-          ? "video/mp4"
-          : "image/jpeg");
-      const base64 = buffer.toString("base64");
-      const dataUri = `data:${mime};base64,${base64}`;
-      return NextResponse.json({ success: true, url: dataUri });
+      // In serverless environments (Vercel), local filesystem is read-only.
+      // If buffer is under 4MB, gracefully return base64 data URI.
+      if (buffer.length <= 4 * 1024 * 1024) {
+        const mime =
+          file.type ||
+          (safeExt === ".png"
+            ? "image/png"
+            : safeExt === ".webp"
+            ? "image/webp"
+            : safeExt === ".mov"
+            ? "video/quicktime"
+            : safeExt === ".mp4"
+            ? "video/mp4"
+            : "image/jpeg");
+        const base64 = buffer.toString("base64");
+        const dataUri = `data:${mime};base64,${base64}`;
+        return NextResponse.json({ success: true, url: dataUri });
+      }
+
+      return NextResponse.json(
+        { error: "File exceeds serverless memory limit. Please upload a file under 4 MB or configure cloud storage." },
+        { status: 413 }
+      );
     }
   } catch (error: any) {
     console.error("Media upload error:", error);

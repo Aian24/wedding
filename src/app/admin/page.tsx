@@ -297,14 +297,53 @@ export default function AdminPage() {
     }
   };
 
-  // Mobile & iOS-safe Image Compressor (handles iPhone HEIC/large resolutions via offscreen Canvas)
-  const compressImageFile = (
+  // Mobile & iOS-safe Image Compressor (handles iPhone HEIC/large resolutions via createImageBitmap & Canvas)
+  const compressImageFile = async (
     file: File,
     maxWidth = 1920,
     quality = 0.85
-  ): Promise<string> => {
+  ): Promise<{ dataUrl: string; blob: Blob }> => {
+    // 1. Try modern native createImageBitmap (fastest, hardware decoded on iOS 15+ and Android, natively converts HEIC)
+    if (typeof window !== "undefined" && "createImageBitmap" in window) {
+      try {
+        const bitmap = await createImageBitmap(file);
+        let { width, height } = bitmap;
+        if (!width || !height) {
+          width = 1200;
+          height = 800;
+        }
+
+        if (width > maxWidth || height > maxWidth) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxWidth) / height);
+            height = maxWidth;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(bitmap, 0, 0, width, height);
+          bitmap.close();
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          const blob = await new Promise<Blob>((res) => {
+            canvas.toBlob((b) => res(b || file), "image/jpeg", quality);
+          });
+          return { dataUrl, blob };
+        }
+        bitmap.close();
+      } catch (bitmapErr) {
+        console.warn("createImageBitmap failed or not supported for this file, using Image fallback:", bitmapErr);
+      }
+    }
+
+    // 2. Fallback to standard Image element + Canvas
     return new Promise((resolve) => {
-      // Create local object URL for instant decoding
       const objectUrl = URL.createObjectURL(file);
       const img = new window.Image();
 
@@ -334,21 +373,23 @@ export default function AdminPage() {
           if (!ctx) {
             URL.revokeObjectURL(objectUrl);
             const fallbackReader = new FileReader();
-            fallbackReader.onload = () => resolve((fallbackReader.result as string) || "");
-            fallbackReader.onerror = () => resolve("");
+            fallbackReader.onload = () => resolve({ dataUrl: (fallbackReader.result as string) || "", blob: file });
+            fallbackReader.onerror = () => resolve({ dataUrl: "", blob: file });
             fallbackReader.readAsDataURL(file);
             return;
           }
 
           ctx.drawImage(img, 0, 0, width, height);
           const dataUrl = canvas.toDataURL("image/jpeg", quality);
-          URL.revokeObjectURL(objectUrl);
-          resolve(dataUrl);
+          canvas.toBlob((b) => {
+            URL.revokeObjectURL(objectUrl);
+            resolve({ dataUrl, blob: b || file });
+          }, "image/jpeg", quality);
         } catch {
           URL.revokeObjectURL(objectUrl);
           const fallbackReader = new FileReader();
-          fallbackReader.onload = () => resolve((fallbackReader.result as string) || "");
-          fallbackReader.onerror = () => resolve("");
+          fallbackReader.onload = () => resolve({ dataUrl: (fallbackReader.result as string) || "", blob: file });
+          fallbackReader.onerror = () => resolve({ dataUrl: "", blob: file });
           fallbackReader.readAsDataURL(file);
         }
       };
@@ -356,8 +397,8 @@ export default function AdminPage() {
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl);
         const fallbackReader = new FileReader();
-        fallbackReader.onload = () => resolve((fallbackReader.result as string) || "");
-        fallbackReader.onerror = () => resolve("");
+        fallbackReader.onload = () => resolve({ dataUrl: (fallbackReader.result as string) || "", blob: file });
+        fallbackReader.onerror = () => resolve({ dataUrl: "", blob: file });
         fallbackReader.readAsDataURL(file);
       };
 
@@ -365,7 +406,7 @@ export default function AdminPage() {
     });
   };
 
-  // Media & Video Management Handlers (Full iOS Chrome & Android compatibility)
+  // Media & Video Management Handlers (Full iOS Safari, Chrome & Android compatibility)
   const handleMediaFileSelect = async (
     key: keyof SiteImages,
     e: React.ChangeEvent<HTMLInputElement>
@@ -377,10 +418,27 @@ export default function AdminPage() {
 
     const isVideo =
       file.type.startsWith("video/") ||
+      file.type === "video/quicktime" ||
       Boolean(file.name.match(/\.(mp4|webm|mov|m4v|ogg)$/i));
 
     if (isVideo) {
+      // iPhone 4K / 60fps video safeguard (recommend under 60MB for smooth mobile uploads)
+      const MAX_VIDEO_BYTES = 60 * 1024 * 1024;
+      if (file.size > MAX_VIDEO_BYTES) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        swalAlert.error(
+          "Video File Too Large",
+          `The selected video is ${sizeMB} MB. iPhone camera videos can be very high resolution. Please choose a video under 60 MB, or trim it in the Photos app first.`
+        );
+        setIsUploadingImage(null);
+        if (e.target) e.target.value = "";
+        return;
+      }
+
       try {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        setImageSuccessMsg(`Uploading video (${sizeMB} MB)... Please keep this screen open.`);
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append("key", key);
@@ -418,14 +476,15 @@ export default function AdminPage() {
     // For images (including iPhone/iPad camera photos, HEIC, high-res photos):
     try {
       const maxDim = key === "logo" ? 800 : 1920;
-      const optimizedDataUrl = await compressImageFile(file, maxDim, 0.85);
+      const { dataUrl: optimizedDataUrl, blob: optimizedBlob } = await compressImageFile(file, maxDim, 0.85);
 
       let finalUrl = optimizedDataUrl;
 
-      // Try background upload for local filesystem static serving (when available)
+      // Background upload to server filesystem as compressed JPEG (under 400KB instead of 25MB raw HEIC)
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        const uploadFile = new File([optimizedBlob], `${key}.jpg`, { type: "image/jpeg" });
+        formData.append("file", uploadFile);
         formData.append("key", key);
 
         const res = await fetch("/api/upload", {
@@ -4140,12 +4199,16 @@ export default function AdminPage() {
                                 <input
                                   id={`dress-code-upload-input-${idx}`}
                                   type="file"
-                                  accept="image/png,image/jpeg,image/webp,image/jpg,image/heic,image/heif,image/*"
-                                  className="hidden"
+                                  accept="image/*"
+                                  className="sr-only"
                                   onChange={(e) => handleMediaFileSelect(targetKey, e)}
                                 />
-                                <label
-                                  htmlFor={`dress-code-upload-input-${idx}`}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const el = document.getElementById(`dress-code-upload-input-${idx}`) as HTMLInputElement;
+                                    if (el) el.click();
+                                  }}
                                   className="w-full py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1b3b5f] border border-blue-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs text-center"
                                 >
                                   <Upload className="w-3.5 h-3.5 text-blue-700" />
@@ -4154,7 +4217,7 @@ export default function AdminPage() {
                                       ? "Uploading Photo..."
                                       : "Upload New Photo for this Card"}
                                   </span>
-                                </label>
+                                </button>
                               </div>
                             );
                           })()}
@@ -4863,17 +4926,17 @@ export default function AdminPage() {
                         <input
                           id={inputId}
                           type="file"
-                          accept={
-                            item.isVideo
-                              ? "video/mp4,video/webm,video/ogg,video/quicktime,video/*"
-                              : "image/png,image/jpeg,image/webp,image/jpg,image/heic,image/heif,image/*"
-                          }
-                          className="hidden"
+                          accept={item.isVideo ? "video/*" : "image/*"}
+                          className="sr-only"
                           onChange={(e) => handleMediaFileSelect(item.key, e)}
                         />
 
-                        <label
-                          htmlFor={inputId}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById(inputId) as HTMLInputElement;
+                            if (el) el.click();
+                          }}
                           className={`flex-1 py-2 px-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer text-center ${
                             item.isVideo
                               ? "bg-purple-900 hover:bg-purple-950"
@@ -4893,7 +4956,7 @@ export default function AdminPage() {
                               ? "Logo"
                               : "Photo"}
                           </span>
-                        </label>
+                        </button>
 
                         <button
                           type="button"
