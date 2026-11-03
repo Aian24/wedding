@@ -1,5 +1,5 @@
 import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
+
 
 // 1. Dedicated Toast (Standard SweetAlert2 Toast - Do NOT include backdrop property)
 const weddingToast = Swal.mixin({

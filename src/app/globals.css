@@ -8,6 +8,11 @@
     --ice-blue: #eaf2f9;
     --champagne: #dfc28d;
     --navy-deep: #0e1d2f;
+
+    --font-cinzel: 'Cinzel', Georgia, serif;
+    --font-playfair: 'Playfair Display', Georgia, serif;
+    --font-script: 'Great Vibes', 'Brush Script MT', cursive;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
 
   html {
