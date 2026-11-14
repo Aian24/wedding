@@ -73,6 +73,20 @@ export async function ensureTables() {
       );
     `;
 
+    // 5. Photobooth Photos Table
+    await sql`
+      CREATE TABLE IF NOT EXISTS photobooth_photos (
+        id VARCHAR(64) PRIMARY KEY,
+        guest_name TEXT DEFAULT 'Guest',
+        photo_strip_url TEXT NOT NULL,
+        individual_shots JSONB DEFAULT '[]'::jsonb,
+        frame_theme TEXT DEFAULT 'classic-white',
+        filter_applied TEXT DEFAULT 'natural',
+        notes TEXT DEFAULT '',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
     isInitialized = true;
   } catch (err) {
     console.error("Failed to initialize database tables:", err);
@@ -295,4 +309,70 @@ export async function likeWishInDb(id: string) {
 export async function deleteWishFromDb(id: string) {
   await ensureTables();
   await sql`DELETE FROM guestbook_wishes WHERE id = ${id}`;
+}
+
+/**
+ * Photobooth Photos Helpers
+ */
+export interface PhotoboothPhoto {
+  id: string;
+  guest_name?: string;
+  photo_strip_url: string;
+  individual_shots?: string[];
+  frame_theme?: string;
+  filter_applied?: string;
+  notes?: string;
+  created_at?: string;
+}
+
+export async function getPhotoboothPhotosFromDb(): Promise<PhotoboothPhoto[]> {
+  await ensureTables();
+  const rows = await sql`
+    SELECT id, guest_name, photo_strip_url, individual_shots, frame_theme, filter_applied, notes, created_at
+    FROM photobooth_photos
+    ORDER BY created_at DESC;
+  `;
+  return rows.map((r: any) => ({
+    id: r.id,
+    guest_name: r.guest_name,
+    photo_strip_url: r.photo_strip_url,
+    individual_shots: Array.isArray(r.individual_shots) ? r.individual_shots : [],
+    frame_theme: r.frame_theme,
+    filter_applied: r.filter_applied,
+    notes: r.notes,
+    created_at: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+  }));
+}
+
+export async function savePhotoboothPhotoToDb(photo: PhotoboothPhoto) {
+  await ensureTables();
+  await sql`
+    INSERT INTO photobooth_photos (
+      id, guest_name, photo_strip_url, individual_shots, frame_theme, filter_applied, notes, created_at
+    )
+    VALUES (
+      ${photo.id},
+      ${photo.guest_name || "Guest"},
+      ${photo.photo_strip_url},
+      ${JSON.stringify(photo.individual_shots || [])}::jsonb,
+      ${photo.frame_theme || "classic-white"},
+      ${photo.filter_applied || "natural"},
+      ${photo.notes || ""},
+      CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      photo_strip_url = EXCLUDED.photo_strip_url,
+      guest_name = EXCLUDED.guest_name,
+      notes = EXCLUDED.notes;
+  `;
+}
+
+export async function deletePhotoboothPhotoFromDb(id: string) {
+  await ensureTables();
+  await sql`DELETE FROM photobooth_photos WHERE id = ${id}`;
+}
+
+export async function clearAllPhotoboothPhotosFromDb() {
+  await ensureTables();
+  await sql`DELETE FROM photobooth_photos`;
 }

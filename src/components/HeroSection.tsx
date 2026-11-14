@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, ChevronDown, Camera } from "lucide-react";
 import { weddingData } from "@/data/weddingData";
 import { weddingStore, CoupleInfo, getInitialCoupleInfo } from "@/lib/weddingStore";
 import { useSiteImages } from "@/hooks/useSiteImages";
@@ -189,6 +190,17 @@ export const HeroSection: React.FC = () => {
             <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-amber-200/90 mt-0.5 font-semibold">
               {coupleInfo.heroVerseCitation || "— Song of Solomon 3:4"}
             </p>
+          </div>
+
+          {/* Front Page Photo Booth CTA Button */}
+          <div className="pt-3 flex items-center justify-center">
+            <Link
+              href="/photobooth"
+              className="px-6 py-2.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/40 text-white text-xs font-semibold tracking-wider uppercase transition-all shadow-lg hover:scale-105 flex items-center gap-2 cursor-pointer"
+            >
+              <Camera className="w-4 h-4 text-amber-200" />
+              <span>Snap 4-Shot Photo Booth</span>
+            </Link>
           </div>
 
           {/* Scroll Down Indicator */}

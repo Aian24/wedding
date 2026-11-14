@@ -8,6 +8,7 @@ import { WeddingDetailsSection } from "@/components/WeddingDetailsSection";
 import { EntourageSection } from "@/components/EntourageSection";
 import { DressCodeSection } from "@/components/DressCodeSection";
 import { RsvpSection } from "@/components/RsvpSection";
+import { PhotoboothBannerSection } from "@/components/PhotoboothBannerSection";
 import { WishesGuestbookSection } from "@/components/WishesGuestbookSection";
 import { WeddingTimelineSection } from "@/components/WeddingTimelineSection";
 import { Footer } from "@/components/Footer";
@@ -41,13 +42,16 @@ export default function Home() {
       {/* 7. Interactive RSVP Form with Accompanied Member Toggles */}
       <RsvpSection />
 
-      {/* 8. Live Wishes & Guestbook Wall */}
+      {/* 8. Interactive 4-Shot Wedding Photo Booth Souvenir */}
+      <PhotoboothBannerSection />
+
+      {/* 9. Live Wishes & Guestbook Wall */}
       <WishesGuestbookSection />
 
-      {/* 9. Day of Wedding Timeline (at last before footer) */}
+      {/* 10. Day of Wedding Timeline (at last before footer) */}
       <WeddingTimelineSection />
 
-      {/* 10. Footer with Couple Monogram & Admin Portal Link */}
+      {/* 11. Footer with Couple Monogram & Admin Portal Link */}
       <Footer onReopenEnvelope={() => setIsEnvelopeOpen(false)} />
     </main>
   );

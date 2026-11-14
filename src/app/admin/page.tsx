@@ -56,6 +56,7 @@ import {
   Navigation,
   BookOpen,
   Shirt,
+  Camera,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
@@ -110,6 +111,7 @@ export default function AdminPage() {
     | "palette"
     | "entourage"
     | "wishes"
+    | "photobooth"
     | "images"
   >("dashboard");
 
@@ -121,6 +123,9 @@ export default function AdminPage() {
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(getInitialTimeline);
   const [entourage, setEntourage] = useState<EntourageCategory[]>([]);
   const [wishes, setWishes] = useState<GuestbookEntry[]>([]);
+  const [photoboothPhotos, setPhotoboothPhotos] = useState<any[]>([]);
+  const [isPhotoboothLoading, setIsPhotoboothLoading] = useState<boolean>(false);
+  const [selectedPhotoboothPhoto, setSelectedPhotoboothPhoto] = useState<any | null>(null);
   const [coupleInfo, setCoupleInfo] = useState<CoupleInfo>(getInitialCoupleInfo());
 
   // Theme text info
@@ -268,11 +273,12 @@ export default function AdminPage() {
 
     // 2. Fetch live data from Neon PostgreSQL database
     try {
-      const [configRes, guestsRes, rsvpsRes, wishesRes] = await Promise.all([
+      const [configRes, guestsRes, rsvpsRes, wishesRes, photoboothRes] = await Promise.all([
         fetch("/api/config").then((r) => r.json()).catch(() => null),
         fetch("/api/guests").then((r) => r.json()).catch(() => null),
         fetch("/api/rsvp").then((r) => r.json()).catch(() => null),
         fetch("/api/wishes").then((r) => r.json()).catch(() => null),
+        fetch("/api/photobooth").then((r) => r.json()).catch(() => null),
       ]);
 
       if (configRes && configRes.success) {
@@ -291,6 +297,9 @@ export default function AdminPage() {
       }
       if (wishesRes && wishesRes.success && Array.isArray(wishesRes.wishes)) {
         setWishes(wishesRes.wishes);
+      }
+      if (photoboothRes && photoboothRes.success && Array.isArray(photoboothRes.photos)) {
+        setPhotoboothPhotos(photoboothRes.photos);
       }
     } catch (err) {
       console.warn("Neon DB fetch error in admin portal:", err);
@@ -911,6 +920,63 @@ export default function AdminPage() {
   };
 
   // Filtered and Sorted RSVPs
+  // Photobooth Actions
+  const handleRefreshPhotobooth = async () => {
+    setIsPhotoboothLoading(true);
+    try {
+      const res = await fetch("/api/photobooth");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.photos)) {
+        setPhotoboothPhotos(data.photos);
+        swalAlert.toastSuccess("Refreshed", "Photo booth gallery up to date.");
+      }
+    } catch {
+      swalAlert.toastError("Refresh Failed", "Could not fetch photo booth photos.");
+    } finally {
+      setIsPhotoboothLoading(false);
+    }
+  };
+
+  const handleDeletePhotoboothPhoto = async (id: string, name?: string) => {
+    const confirmed = await swalAlert.confirmDelete({
+      title: "Delete Photo Strip?",
+      text: `Are you sure you want to permanently delete this photo strip for ${name || "Guest"}?`,
+      confirmButtonText: "Yes, Delete",
+    });
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/photobooth?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setPhotoboothPhotos((prev) => prev.filter((p) => p.id !== id));
+        swalAlert.toastSuccess("Deleted", "Photo strip deleted.");
+      }
+    } catch {
+      swalAlert.toastError("Delete Failed", "Failed to delete photo strip.");
+    }
+  };
+
+  const handleDownloadAllPhotobooth = () => {
+    if (photoboothPhotos.length === 0) {
+      swalAlert.info("No Photos", "There are no photo strips to download yet.");
+      return;
+    }
+
+    photoboothPhotos.forEach((photo, idx) => {
+      setTimeout(() => {
+        const link = document.createElement("a");
+        link.href = photo.photo_strip_url;
+        link.download = `Aian-Dang-PhotoBooth-${photo.guest_name || "Guest"}-${photo.id}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }, idx * 250);
+    });
+
+    swalAlert.toastSuccess("Downloading...", `Downloading all ${photoboothPhotos.length} photo strips.`);
+  };
+
   const filteredRsvps = useMemo(() => {
     return rsvps.filter((r) => {
       const matchSearch =
@@ -1907,6 +1973,29 @@ export default function AdminPage() {
 
             <button
               onClick={() => {
+                setActiveTab("photobooth");
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl text-xs font-semibold tracking-wider transition-all ${
+                activeTab === "photobooth"
+                  ? "bg-[#1b3b5f] text-amber-200 shadow-md border border-amber-200/40"
+                  : "text-slate-300 hover:bg-blue-900/40 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3 truncate">
+                <Camera className="w-4 h-4 shrink-0" />
+                <span className="truncate">
+                  <span className="sm:hidden">Photo Booth</span>
+                  <span className="hidden sm:inline">Photo Booth Gallery</span>
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-blue-800 text-[10px] text-white shrink-0">
+                {photoboothPhotos.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
                 setActiveTab("images");
                 setSidebarOpen(false);
               }}
@@ -1976,6 +2065,7 @@ export default function AdminPage() {
                 {activeTab === "palette" && "Dress Palette Colors"}
                 {activeTab === "entourage" && "Entourage Roster"}
                 {activeTab === "wishes" && "Guestbook Blessings"}
+                {activeTab === "photobooth" && "Photo Booth Gallery"}
                 {activeTab === "images" && "Photos & Media"}
               </h1>
               <p className="text-[10px] text-slate-400 whitespace-nowrap truncate">
@@ -4738,7 +4828,192 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* 7. IMAGES & LOGOS MANAGEMENT TAB */}
+          {/* 7. PHOTO BOOTH GALLERY TAB */}
+          {activeTab === "photobooth" && (
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+              {/* Header with Actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="font-serif-title font-bold text-lg text-[#1b3b5f]">
+                    Photo Booth Keepsake Gallery ({photoboothPhotos.length})
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Live souvenir photo strips captured by wedding guests and visitors.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleRefreshPhotobooth}
+                    disabled={isPhotoboothLoading}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className={`w-3.5 h-3.5 ${isPhotoboothLoading ? "animate-spin" : ""}`} />
+                    <span>Refresh</span>
+                  </button>
+
+                  <button
+                    onClick={handleDownloadAllPhotobooth}
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Download All</span>
+                  </button>
+
+                  <Link
+                    href="/photobooth/gallery"
+                    target="_blank"
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1b3b5f] border border-blue-200 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-[#7094b7]" />
+                    <span>Public Gallery</span>
+                  </Link>
+
+                  <Link
+                    href="/photobooth"
+                    target="_blank"
+                    className="px-3.5 py-1.5 rounded-xl bg-[#1b3b5f] hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Open Photo Booth</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Photo Strips Grid */}
+              {photoboothPhotos.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-14 h-14 rounded-full bg-blue-50 text-[#7094b7] flex items-center justify-center mx-auto mb-3">
+                    <Camera className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-serif-title font-bold text-base text-[#1b3b5f] mb-1">
+                    No Photo Strips Captured Yet
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-4 max-w-sm mx-auto">
+                    Guests can use the interactive photo booth from the front page to snap 4-shot keepsake souvenirs.
+                  </p>
+                  <Link
+                    href="/photobooth"
+                    target="_blank"
+                    className="px-5 py-2 rounded-full bg-[#1b3b5f] text-white text-xs font-semibold inline-flex items-center gap-2"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Take a Test Photo Strip</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {photoboothPhotos.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between group"
+                    >
+                      <div
+                        onClick={() => setSelectedPhotoboothPhoto(photo)}
+                        className="relative aspect-[1/3] w-full bg-slate-100 cursor-pointer overflow-hidden"
+                      >
+                        <img
+                          src={photo.photo_strip_url}
+                          alt={photo.guest_name || "Photo Strip"}
+                          className="w-full h-full object-contain p-2 group-hover:scale-102 transition-transform duration-300"
+                        />
+                      </div>
+
+                      <div className="p-2.5 bg-white border-t border-slate-100 flex items-center justify-between gap-1.5">
+                        <div className="min-w-0">
+                          <p className="font-serif-title font-bold text-xs text-[#1b3b5f] truncate">
+                            {photo.guest_name || "Guest"}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate">
+                            {photo.created_at
+                              ? new Date(photo.created_at).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })
+                              : "Dec 12"}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => {
+                              const link = document.createElement("a");
+                              link.href = photo.photo_strip_url;
+                              link.download = `PhotoBooth-${photo.guest_name || "Guest"}-${photo.id}.png`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            title="Download"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePhotoboothPhoto(photo.id, photo.guest_name)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Modal Lightbox for Admin Photo Preview */}
+          {selectedPhotoboothPhoto && (
+            <div
+              onClick={() => setSelectedPhotoboothPhoto(null)}
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="relative max-w-sm w-full max-h-[90vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+              >
+                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                  <p className="font-serif-title font-bold text-xs text-[#1b3b5f]">
+                    {selectedPhotoboothPhoto.guest_name || "Guest"} &bull; Photo Strip
+                  </p>
+                  <button
+                    onClick={() => setSelectedPhotoboothPhoto(null)}
+                    className="w-7 h-7 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-slate-700"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="p-4 overflow-y-auto max-h-[70vh] flex justify-center bg-slate-100">
+                  <img
+                    src={selectedPhotoboothPhoto.photo_strip_url}
+                    alt="Photo Strip"
+                    className="max-h-[65vh] object-contain rounded-xl shadow-md"
+                  />
+                </div>
+                <div className="p-3 bg-white border-t border-slate-100 flex justify-end">
+                  <button
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = selectedPhotoboothPhoto.photo_strip_url;
+                      link.download = `PhotoBooth-${selectedPhotoboothPhoto.guest_name || "Guest"}-${selectedPhotoboothPhoto.id}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#1b3b5f] text-white text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Download PNG</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 8. IMAGES & LOGOS MANAGEMENT TAB */}
           {activeTab === "images" && (
             <div className="space-y-6">
               {/* Success Notification Banner */}
