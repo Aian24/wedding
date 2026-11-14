@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Users, Heart, ChevronDown } from "lucide-react";
-import { weddingStore, EntourageCategory } from "@/lib/weddingStore";
+import { weddingStore, EntourageCategory, sortEntourageCategories } from "@/lib/weddingStore";
 import { useSiteImages } from "@/hooks/useSiteImages";
 
 export const EntourageSection: React.FC = () => {
@@ -13,10 +13,10 @@ export const EntourageSection: React.FC = () => {
   const siteImages = useSiteImages();
 
   useEffect(() => {
-    setEntourage(weddingStore.getEntourage());
+    setEntourage(sortEntourageCategories(weddingStore.getEntourage()));
 
     const handleUpdate = () => {
-      setEntourage(weddingStore.getEntourage());
+      setEntourage(sortEntourageCategories(weddingStore.getEntourage()));
     };
     window.addEventListener("wedding_entourage_updated", handleUpdate);
     return () => window.removeEventListener("wedding_entourage_updated", handleUpdate);

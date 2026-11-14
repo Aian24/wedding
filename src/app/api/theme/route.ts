@@ -5,7 +5,15 @@ import { getInitialThemeColors, ThemeColor } from "@/lib/weddingStore";
 export async function GET() {
   try {
     const saved = await getConfig<ThemeColor[]>("theme_colors");
-    const colors = saved || getInitialThemeColors();
+    let colors = saved || getInitialThemeColors();
+    if (
+      Array.isArray(colors) &&
+      (colors.some((c: any) => c.name === "Pure Pearl" || c.name === "Champagne Gold") ||
+       !colors.some((c: any) => c.name === "Classic Blue" || c.name === "Soft Blue"))
+    ) {
+      colors = getInitialThemeColors();
+      saveConfig("theme_colors", colors).catch(console.error);
+    }
     return NextResponse.json({
       success: true,
       colors,

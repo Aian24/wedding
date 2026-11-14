@@ -148,12 +148,12 @@ export const weddingData: WeddingData = {
     description:
       "A serene and timeless palette celebrating crisp pure white, delicate dusty blues, rich slate navy, and luminous champagne accents.",
     colors: [
-      { name: "Dusty Blue", hex: "#7B9EBD", desc: "For Bridesmaids & Accent Details" },
-      { name: "Slate Blue", hex: "#4C6B8B", desc: "For Secondary Sponsors & Florals" },
-      { name: "Midnight Navy", hex: "#1A2E44", desc: "For Groomsmen Suits & Tuxedos" },
-      { name: "Ice Blue", hex: "#D6E5F3", desc: "For Linens & Delicate Ribbons" },
-      { name: "Pure Pearl", hex: "#FFFFFF", desc: "Strictly Reserved for the Bride" },
-      { name: "Champagne Gold", hex: "#DFC28D", desc: "For Accessories & Stationery Gold Foil" },
+      { name: "Dusty Blue", hex: "#7B9EBD", desc: "For Bridesmaids & Groomsmen" },
+      { name: "Slate Blue", hex: "#4C6B8B", desc: "For Ninang & Ninong" },
+      { name: "Classic Blue", hex: "#2B5B84", desc: "For Guests" },
+      { name: "Navy Blue", hex: "#1B365D", desc: "For Bearers & Little Attendants" },
+      { name: "Midnight Blue", hex: "#101F3C", desc: "For Principal Sponsors" },
+      { name: "Soft Blue", hex: "#A5C8E4", desc: "For Guests" },
     ],
   },
   ceremony: {
@@ -278,6 +278,14 @@ export const weddingData: WeddingData = {
       ],
     },
     {
+      category: "Secondary Sponsors",
+      members: [
+        { role: "Candle Sponsors", name: "Justin Ramos & Sofia Mendoza" },
+        { role: "Veil Sponsors", name: "Miguel Santos & Stephanie Tan" },
+        { role: "Cord Sponsors", name: "Gabriel Lopez & Janice Yu" },
+      ],
+    },
+    {
       category: "Best Man & Maid of Honor",
       members: [
         { role: "Best Man", name: "Christian Paul Ramos" },
@@ -285,22 +293,14 @@ export const weddingData: WeddingData = {
       ],
     },
     {
-      category: "Groomsmen & Bridesmaids",
+      category: "Bridesmaids & Groomsmen",
       members: [
-        { role: "Groomsman", name: "Mark Anthony Lim" },
         { role: "Bridesmaid", name: "Camille Joy Perez" },
-        { role: "Groomsman", name: "John David Sy" },
+        { role: "Groomsman", name: "Mark Anthony Lim" },
         { role: "Bridesmaid", name: "Alyssa Marie Garcia" },
-        { role: "Groomsman", name: "Patrick Vince Hernandez" },
+        { role: "Groomsman", name: "John David Sy" },
         { role: "Bridesmaid", name: "Bea Nicole Flores" },
-      ],
-    },
-    {
-      category: "Secondary Sponsors",
-      members: [
-        { role: "Candle Sponsors", name: "Justin Ramos & Sofia Mendoza" },
-        { role: "Veil Sponsors", name: "Miguel Santos & Stephanie Tan" },
-        { role: "Cord Sponsors", name: "Gabriel Lopez & Janice Yu" },
+        { role: "Groomsman", name: "Patrick Vince Hernandez" },
       ],
     },
     {

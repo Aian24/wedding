@@ -3927,13 +3927,40 @@ export default function AdminPage() {
                     </p>
                   </div>
 
-                  <button
-                    onClick={handleOpenAddColor}
-                    className="px-3 py-1.5 rounded-xl bg-[#1b3b5f] text-white text-xs font-semibold flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Color</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const confirmed = await swalAlert.confirm({
+                          title: "Reset Color Palette?",
+                          text: "Restore all 6 official wedding theme swatches to default colors?",
+                          confirmButtonText: "Yes, Reset Swatches",
+                        });
+                        if (confirmed) {
+                          weddingStore.resetThemeColors();
+                          setColors(weddingStore.getThemeColors());
+                          await fetch("/api/config", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ key: "theme_colors", data: weddingStore.getThemeColors() }),
+                          }).catch(console.error);
+                          swalAlert.toastSuccess("Palette Reset", "Theme swatches restored to defaults.");
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Reset to default color swatches"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Reset Defaults</span>
+                    </button>
+                    <button
+                      onClick={handleOpenAddColor}
+                      className="px-3 py-1.5 rounded-xl bg-[#1b3b5f] text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Color</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

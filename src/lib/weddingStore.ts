@@ -250,17 +250,36 @@ export const getInitialCoupleInfo = (): CoupleInfo => {
   };
 };
 
+// Canonical ceremony sorting order for wedding entourage:
+// 1. Parents, 2. Principal Sponsors, 3. Secondary Sponsors, 4. Best Man & Maid of Honor, 5. Bridesmaids & Groomsmen, 6. Bearers & Flower Angels
+export const sortEntourageCategories = (list: EntourageCategory[]): EntourageCategory[] => {
+  const getWeight = (catName: string) => {
+    const s = (catName || "").toLowerCase();
+    if (s.includes("parent")) return 1;
+    if (s.includes("principal")) return 2;
+    if (s.includes("secondary")) return 3;
+    if (s.includes("best man") || s.includes("maid")) return 4;
+    if (s.includes("bridesmaid") || s.includes("groomsmen") || s.includes("groom")) return 5;
+    if (s.includes("bearer") || s.includes("flower") || s.includes("angel")) return 6;
+    return 7;
+  };
+
+  return [...list].sort((a, b) => getWeight(a.category) - getWeight(b.category));
+};
+
 // Initial entourage with unique IDs
 export const getInitialEntourage = (): EntourageCategory[] => {
-  return defaultData.entourage.map((cat, catIdx) => ({
-    id: `cat-${catIdx}`,
-    category: cat.category,
-    members: cat.members.map((m, mIdx) => ({
-      id: `m-${catIdx}-${mIdx}-${Date.now()}`,
-      role: m.role,
-      name: m.name,
-    })),
-  }));
+  return sortEntourageCategories(
+    defaultData.entourage.map((cat, catIdx) => ({
+      id: `cat-${catIdx}`,
+      category: cat.category,
+      members: cat.members.map((m, mIdx) => ({
+        id: `m-${catIdx}-${mIdx}-${Date.now()}`,
+        role: m.role,
+        name: m.name,
+      })),
+    }))
+  );
 };
 
 // Real guest list starts clean and empty for the couple
@@ -445,7 +464,17 @@ export const weddingStore = {
     const saved = localStorage.getItem(STORAGE_KEYS.THEME);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (
+          Array.isArray(parsed) &&
+          (parsed.some((c: any) => c.name === "Pure Pearl" || c.name === "Champagne Gold") ||
+           !parsed.some((c: any) => c.name === "Classic Blue" || c.name === "Soft Blue"))
+        ) {
+          const init = getInitialThemeColors();
+          localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(init));
+          return init;
+        }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch {
         return getInitialThemeColors();
       }
@@ -453,6 +482,10 @@ export const weddingStore = {
     const init = getInitialThemeColors();
     localStorage.setItem(STORAGE_KEYS.THEME, JSON.stringify(init));
     return init;
+  },
+
+  resetThemeColors() {
+    this.saveThemeColors(getInitialThemeColors());
   },
 
   saveThemeColors(colors: ThemeColor[]) {
@@ -554,18 +587,19 @@ export const weddingStore = {
     }
   },
 
-  // Entourage
+  // Entourage (automatically sorted by canonical procession order)
   getEntourage(): EntourageCategory[] {
-    if (typeof window === "undefined") return getInitialEntourage();
+    if (typeof window === "undefined") return sortEntourageCategories(getInitialEntourage());
     const saved = localStorage.getItem(STORAGE_KEYS.ENTOURAGE);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return sortEntourageCategories(parsed);
       } catch {
-        return getInitialEntourage();
+        return sortEntourageCategories(getInitialEntourage());
       }
     }
-    const init = getInitialEntourage();
+    const init = sortEntourageCategories(getInitialEntourage());
     localStorage.setItem(STORAGE_KEYS.ENTOURAGE, JSON.stringify(init));
     return init;
   },

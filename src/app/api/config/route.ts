@@ -4,6 +4,7 @@ import {
   getInitialCoupleInfo,
   getInitialThemeColors,
   getInitialEntourage,
+  sortEntourageCategories,
   getInitialSiteImages,
   getInitialDressCodes,
   getInitialTimeline,
@@ -15,8 +16,17 @@ export async function GET() {
 
     // Default fallbacks if DB doesn't have them yet
     const coupleInfo = configs.couple_info || getInitialCoupleInfo();
-    const themeColors = configs.theme_colors || getInitialThemeColors();
-    const entourage = configs.entourage || getInitialEntourage();
+    let themeColors = configs.theme_colors;
+    if (
+      !themeColors ||
+      (Array.isArray(themeColors) &&
+        (themeColors.some((c: any) => c.name === "Pure Pearl" || c.name === "Champagne Gold") ||
+         !themeColors.some((c: any) => c.name === "Classic Blue" || c.name === "Soft Blue")))
+    ) {
+      themeColors = getInitialThemeColors();
+      saveConfig("theme_colors", themeColors).catch(console.error);
+    }
+    const entourage = sortEntourageCategories(configs.entourage || getInitialEntourage());
     const siteImages = configs.site_images || getInitialSiteImages();
     const dressCodes = configs.dress_codes || getInitialDressCodes();
     const timeline = configs.timeline || getInitialTimeline();
