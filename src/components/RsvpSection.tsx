@@ -504,55 +504,19 @@ export const RsvpSection: React.FC = () => {
                   className="space-y-4 pt-2 border-t border-slate-100"
                 >
                   <label className="block text-xs uppercase font-bold tracking-widest text-[#7094b7]">
-                    Step 3: Contact Details &amp; Message
+                    Step 3: Warm Wishes &amp; Marriage Blessing (Optional)
                   </label>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Email Address *
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                        <input
-                          type="email"
-                          required
-                          placeholder="name@email.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:border-[#1b3b5f] focus:outline-none bg-slate-50/50"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Mobile Number *
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                        <input
-                          type="tel"
-                          required
-                          placeholder="+63 917 123 4567"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:border-[#1b3b5f] focus:outline-none bg-slate-50/50"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                       Warm Wishes &amp; Marriage Blessing for Aian &amp; Dang
                     </label>
                     <textarea
-                      rows={2}
+                      rows={3}
                       placeholder="Share a heartfelt blessing or message for our wedding day..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:border-[#1b3b5f] focus:outline-none bg-slate-50/50"
+                      className="w-full p-3.5 rounded-xl border border-slate-200 text-xs focus:border-[#1b3b5f] focus:outline-none bg-slate-50/50"
                     />
                   </div>
 

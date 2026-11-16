@@ -1280,9 +1280,7 @@ export default function AdminPage() {
       "Table Assignment",
       "Max Seats",
       "Members Count",
-      "Invited Members",
-      "Phone",
-      "Email",
+      "Invited Members & Attendance",
       "Notes",
       "Status",
     ];
@@ -1294,8 +1292,6 @@ export default function AdminPage() {
       `"${p.maxSeats}"`,
       `"${p.members.length}"`,
       `"${p.members.map((m) => `${m.name} (${m.isAttending ? "Present" : "Absent"})`).join("; ").replace(/"/g, '""')}"`,
-      `"${p.phone || ""}"`,
-      `"${p.email || ""}"`,
       `"${(p.notes || "").replace(/"/g, '""')}"`,
       `"${p.status || "pending"}"`,
     ]);
@@ -1312,8 +1308,6 @@ export default function AdminPage() {
       "Seats (Headcount)",
       "Companions",
       "Table Assignment",
-      "Email",
-      "Phone",
       "Special Message",
       "Date Submitted",
     ];
@@ -1324,8 +1318,6 @@ export default function AdminPage() {
       `"${r.guestCount || 1}"`,
       `"${(r.companionNames || "").replace(/"/g, '""')}"`,
       `"${(r.tableNumber || "Unassigned").replace(/"/g, '""')}"`,
-      `"${r.email || ""}"`,
-      `"${r.phone || ""}"`,
       `"${(r.message || "").replace(/"/g, '""')}"`,
       `"${r.submittedAt}"`,
     ]);
@@ -1349,10 +1341,10 @@ export default function AdminPage() {
 
   const handleDownloadRsvpTemplate = () => {
     const sample =
-`Full Name,Status,Guest Count,Companion Names,Table Number,Phone,Email,Message
-"Juan dela Cruz","attending",2,"Maria dela Cruz","VIP Table 1","+63 917 123 4567","juan@example.com","Warmest congratulations to Aian & Dang!"
-"Elena Santos","attending",4,"Robert Santos, Marco Santos, Chloe Santos","Table 3","+63 918 987 6543","elena@example.com","So excited to celebrate with you!"
-"Manuel Cruz","declined",1,"","Principal Sponsors Table","+63 917 555 1234","manuel@example.com","Sending love and best wishes from afar!"`;
+`Full Name,Status,Guest Count,Companion Names,Table Number,Special Message
+"Juan dela Cruz","attending",2,"Maria dela Cruz","VIP Table 1","Warmest congratulations to Aian & Dang!"
+"Elena Santos","attending",4,"Robert Santos, Marco Santos, Chloe Santos","Table 3","So excited to celebrate with you!"
+"Manuel Cruz","declined",1,"","Principal Sponsors Table","Sending love and best wishes from afar!"`;
     downloadCsvFile("Aian_Dang_RSVP_Template.csv", sample);
     swalAlert.toastSuccess("Template Downloaded", "RSVP CSV template is ready to fill and import.");
   };
@@ -4028,7 +4020,6 @@ export default function AdminPage() {
                             <th className="p-3.5 whitespace-nowrap min-w-[280px]">Party / Primary Guest</th>
                             <th className="p-3.5 whitespace-nowrap min-w-[160px]">Table Assignment</th>
                             <th className="p-3.5 whitespace-nowrap min-w-[380px]">Guest Members &amp; Attendance (Present / Absent)</th>
-                            <th className="p-3.5 whitespace-nowrap min-w-[200px]">Contact</th>
                             <th className="p-3.5 text-right whitespace-nowrap min-w-[100px]">Actions</th>
                           </tr>
                         </thead>
@@ -4108,12 +4099,6 @@ export default function AdminPage() {
                                       </div>
                                     </div>
                                   ))}
-                                </div>
-                              </td>
-                              <td className="p-3.5 text-slate-500 text-[11px] whitespace-nowrap min-w-[220px]">
-                                <div className="space-y-0.5 whitespace-nowrap">
-                                  {party.phone && <p className="whitespace-nowrap font-mono text-slate-700">{party.phone}</p>}
-                                  {party.email && <p className="text-slate-400 whitespace-nowrap">{party.email}</p>}
                                 </div>
                               </td>
                               <td className="p-3.5 text-right space-x-2 whitespace-nowrap min-w-[100px]">
@@ -4683,7 +4668,7 @@ export default function AdminPage() {
                             <th className="p-3.5 whitespace-nowrap min-w-[80px]">Seats</th>
                             <th className="p-3.5 whitespace-nowrap min-w-[340px]">Member Breakdown</th>
                             <th className="p-3.5 whitespace-nowrap min-w-[160px]">Table</th>
-                            <th className="p-3.5 whitespace-nowrap min-w-[220px]">Contact</th>
+                            <th className="p-3.5 whitespace-nowrap min-w-[260px]">Special Wish / Message</th>
                             <th className="p-3.5 text-right whitespace-nowrap min-w-[100px]">Actions</th>
                           </tr>
                         </thead>
@@ -4751,11 +4736,8 @@ export default function AdminPage() {
                                   {rsvp.tableNumber || "Unassigned"}
                                 </span>
                               </td>
-                              <td className="p-3.5 text-[11px] text-slate-500 whitespace-nowrap min-w-[220px]">
-                                <div className="space-y-0.5 whitespace-nowrap">
-                                  {rsvp.phone && <p className="whitespace-nowrap font-mono text-slate-700">{rsvp.phone}</p>}
-                                  {rsvp.email && <p className="text-slate-400 whitespace-nowrap">{rsvp.email}</p>}
-                                </div>
+                              <td className="p-3.5 text-[11px] text-slate-600 max-w-[260px] truncate" title={rsvp.message}>
+                                {rsvp.message ? `"${rsvp.message}"` : <span className="text-slate-300 italic">No message</span>}
                               </td>
                               <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap min-w-[100px]">
                                 <button
@@ -5463,29 +5445,6 @@ export default function AdminPage() {
                   onChange={(e) => setPartyFormPrimary(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    placeholder="email@example.com"
-                    value={partyFormEmail}
-                    onChange={(e) => setPartyFormEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    placeholder="+63 917 123 4567"
-                    value={partyFormPhone}
-                    onChange={(e) => setPartyFormPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#1b3b5f]"
-                  />
-                </div>
               </div>
 
               <div>
