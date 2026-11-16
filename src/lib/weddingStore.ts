@@ -296,7 +296,7 @@ export const normalizePartyMembers = (party: InvitedParty): InvitedParty => {
         expandedMembers.push({
           id: `${m.id}-${pIdx}`,
           name: partName,
-          role: m.role || (mIdx === 0 && pIdx === 0 ? "Primary Guest" : "Guest"),
+          role: m.role || "Primary Guest",
           isAttending: m.isAttending !== false,
         });
       });
@@ -304,7 +304,7 @@ export const normalizePartyMembers = (party: InvitedParty): InvitedParty => {
       expandedMembers.push({
         id: m.id || `m-${mIdx}`,
         name: m.name,
-        role: m.role || (mIdx === 0 ? "Primary Guest" : "Guest"),
+        role: m.role || "Guest",
         isAttending: m.isAttending !== false,
       });
     }

@@ -128,25 +128,25 @@ export const weddingData: WeddingData = {
     {
       id: "pty-guest-1",
       partyName: "Tito & Gloria Basagre",
-      primaryGuest: "Tito Basagre",
+      primaryGuest: "Tito Basagre, Gloria Basagre",
       maxSeats: 2,
       tableNumber: "Table 1",
       status: "confirmed",
       members: [
         { id: "m-1-1", name: "Tito Basagre", role: "Primary Guest", isAttending: true },
-        { id: "m-1-2", name: "Gloria Basagre", role: "Guest", isAttending: true },
+        { id: "m-1-2", name: "Gloria Basagre", role: "Primary Guest", isAttending: true },
       ],
     },
     {
       id: "pty-guest-2",
       partyName: "Cecilia De Jesus & Danilo Rivera",
-      primaryGuest: "Cecilia De Jesus",
+      primaryGuest: "Cecilia De Jesus, Danilo Rivera",
       maxSeats: 2,
       tableNumber: "Table 1",
       status: "confirmed",
       members: [
         { id: "m-2-1", name: "Cecilia De Jesus", role: "Primary Guest", isAttending: true },
-        { id: "m-2-2", name: "Danilo Rivera", role: "Guest", isAttending: true },
+        { id: "m-2-2", name: "Danilo Rivera", role: "Primary Guest", isAttending: true },
       ],
     },
     {
@@ -174,13 +174,13 @@ export const weddingData: WeddingData = {
     {
       id: "pty-guest-5",
       partyName: "Michelle Accad & Melvin Garcia",
-      primaryGuest: "Michelle Accad",
+      primaryGuest: "Michelle Accad, Melvin Garcia",
       maxSeats: 4,
       tableNumber: "Table 3",
       status: "confirmed",
       members: [
         { id: "m-5-1", name: "Michelle Accad", role: "Primary Guest", isAttending: true },
-        { id: "m-5-2", name: "Melvin Garcia", role: "Guest", isAttending: true },
+        { id: "m-5-2", name: "Melvin Garcia", role: "Primary Guest", isAttending: true },
         { id: "m-5-3", name: "Malia Garcia", role: "Flower Girl", isAttending: true },
         { id: "m-5-4", name: "Cassey Garcia", role: "Flower Girl", isAttending: true },
       ],
@@ -188,13 +188,13 @@ export const weddingData: WeddingData = {
     {
       id: "pty-guest-6",
       partyName: "Michael Rivera & Clariz Penoz",
-      primaryGuest: "Michael Rivera",
+      primaryGuest: "Michael Rivera, Clariz Penoz",
       maxSeats: 3,
       tableNumber: "Table 3",
       status: "confirmed",
       members: [
         { id: "m-6-1", name: "Michael Rivera", role: "Primary Guest", isAttending: true },
-        { id: "m-6-2", name: "Clariz Penoz", role: "Guest", isAttending: true },
+        { id: "m-6-2", name: "Clariz Penoz", role: "Primary Guest", isAttending: true },
         { id: "m-6-3", name: "Dylan Penoz", role: "Secondary Sponsor", isAttending: true },
       ],
     },
@@ -257,13 +257,13 @@ export const weddingData: WeddingData = {
     {
       id: "pty-guest-12",
       partyName: "MJ Portes & Gian Carlo Rivera",
-      primaryGuest: "MJ Portes",
+      primaryGuest: "MJ Portes, Gian Carlo Rivera",
       maxSeats: 2,
       tableNumber: "Table 5",
       status: "confirmed",
       members: [
         { id: "m-12-1", name: "MJ Portes", role: "Primary Guest", isAttending: true },
-        { id: "m-12-2", name: "Gian Carlo Rivera", role: "Guest", isAttending: true },
+        { id: "m-12-2", name: "Gian Carlo Rivera", role: "Primary Guest", isAttending: true },
       ],
     },
     {
@@ -348,25 +348,25 @@ export const weddingData: WeddingData = {
     {
       id: "pty-guest-20",
       partyName: "Arnel & Monaliza De Jesus",
-      primaryGuest: "Arnel De Jesus",
+      primaryGuest: "Arnel De Jesus, Monaliza De Jesus",
       maxSeats: 2,
       tableNumber: "Table 7",
       status: "confirmed",
       members: [
         { id: "m-20-1", name: "Arnel De Jesus", role: "Primary Guest", isAttending: true },
-        { id: "m-20-2", name: "Monaliza De Jesus", role: "Guest", isAttending: true },
+        { id: "m-20-2", name: "Monaliza De Jesus", role: "Primary Guest", isAttending: true },
       ],
     },
     {
       id: "pty-guest-21",
       partyName: "Marco & Jona Molina",
-      primaryGuest: "Marco Molina",
+      primaryGuest: "Marco Molina, Jona Molina",
       maxSeats: 5,
       tableNumber: "Table 7",
       status: "confirmed",
       members: [
         { id: "m-21-1", name: "Marco Molina", role: "Primary Guest", isAttending: true },
-        { id: "m-21-2", name: "Jona Molina", role: "Guest", isAttending: true },
+        { id: "m-21-2", name: "Jona Molina", role: "Primary Guest", isAttending: true },
         { id: "m-21-3", name: "MJ Molina", role: "Secondary Sponsor", isAttending: true },
         { id: "m-21-4", name: "Najah Molina", role: "Guest", isAttending: true },
         { id: "m-21-5", name: "Jenna Molina", role: "Guest", isAttending: true },
@@ -375,13 +375,13 @@ export const weddingData: WeddingData = {
     {
       id: "pty-guest-22",
       partyName: "KC & JR Ofilas",
-      primaryGuest: "KC Ofilas",
+      primaryGuest: "KC Ofilas, JR Ofilas",
       maxSeats: 4,
       tableNumber: "Table 8",
       status: "confirmed",
       members: [
         { id: "m-22-1", name: "KC Ofilas", role: "Primary Guest", isAttending: true },
-        { id: "m-22-2", name: "JR Ofilas", role: "Guest", isAttending: true },
+        { id: "m-22-2", name: "JR Ofilas", role: "Primary Guest", isAttending: true },
         { id: "m-22-3", name: "Azriel Ofilas", role: "Flower Boy", isAttending: true },
         { id: "m-22-4", name: "Sabria Ofilas", role: "Guest", isAttending: true },
       ],

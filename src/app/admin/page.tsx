@@ -1411,13 +1411,13 @@ export default function AdminPage() {
       };
 
       // Add members with their specific roles
-      primaryNames.forEach((n, idx) => addMember(n, idx === 0 ? "Primary Guest" : "Guest"));
+      primaryNames.forEach((n) => addMember(n, "Primary Guest"));
       flowerGirls.forEach((n) => addMember(n, "Flower Girl"));
       flowerBoys.forEach((n) => addMember(n, "Flower Boy"));
       secondarySponsors.forEach((n) => addMember(n, "Secondary Sponsor"));
       generalMembers.forEach((n) => addMember(n, "Guest"));
 
-      const actualPrimary = primaryNames[0] || rawPartyName || `Guest #${index + 1}`;
+      const actualPrimary = primaryGuestVal || primaryNames.join(", ") || rawPartyName || `Guest #${index + 1}`;
       if (partyMembers.length === 0) {
         addMember(actualPrimary, "Primary Guest");
       }
@@ -4065,8 +4065,18 @@ export default function AdminPage() {
                                         <span className="font-semibold text-slate-800 text-xs whitespace-nowrap">
                                           {m.name}
                                         </span>
-                                        {m.role && m.role !== "Guest" && m.role !== "Plus One / Guest" && (
-                                          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100 font-bold whitespace-nowrap">
+                                        {m.role && (
+                                          <span
+                                            className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-md font-bold whitespace-nowrap ${
+                                              m.role === "Primary Guest"
+                                                ? "bg-amber-50 text-amber-900 border border-amber-200"
+                                                : m.role === "Secondary Sponsor"
+                                                ? "bg-purple-50 text-purple-900 border border-purple-200"
+                                                : m.role.toLowerCase().includes("flower")
+                                                ? "bg-pink-50 text-pink-900 border border-pink-200"
+                                                : "bg-blue-50 text-blue-800 border border-blue-100"
+                                            }`}
+                                          >
                                             {m.role}
                                           </span>
                                         )}
