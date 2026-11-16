@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q")?.toLowerCase().trim();
+    const seed = searchParams.get("seed");
 
-    let parties = await getPartiesFromDb();
-
-    // Auto-seed initial 25 guest parties if DB table is currently empty
-    if (parties.length === 0 && Array.isArray(weddingData.invitedParties) && weddingData.invitedParties.length > 0) {
+    // Only seed on explicit request (e.g. seed=true), never auto-seed on empty list
+    if (seed === "true" && Array.isArray(weddingData.invitedParties) && weddingData.invitedParties.length > 0) {
+      await clearAllPartiesFromDb();
       for (const p of weddingData.invitedParties) {
         await savePartyToDb({
           id: p.id,
@@ -31,8 +31,9 @@ export async function GET(request: NextRequest) {
           lastUpdated: new Date().toLocaleString(),
         });
       }
-      parties = await getPartiesFromDb();
     }
+
+    const parties = await getPartiesFromDb();
 
     if (!query) {
       return NextResponse.json({ success: true, parties });
@@ -64,8 +65,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Support bulk batch save (e.g. from Excel/CSV import)
+    // Support bulk batch save (e.g. from Excel/CSV import or saving whole list)
     if (Array.isArray(body.parties)) {
+      if (body.replace === true || body.parties.length === 0) {
+        await clearAllPartiesFromDb();
+      }
       for (const p of body.parties) {
         await savePartyToDb({
           id: p.id || "pty-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
           maxSeats: p.maxSeats || (p.members ? p.members.length : 1),
           members: p.members || [],
           tableNumber: p.tableNumber,
-          status: p.status || "pending",
+          status: p.status || "confirmed",
           notes: p.notes,
           lastUpdated: new Date().toLocaleString(),
         });

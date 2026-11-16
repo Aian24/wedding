@@ -422,7 +422,7 @@ export const weddingStore = {
   getParties(): InvitedParty[] {
     if (typeof window === "undefined") return getInitialParties();
     const saved = localStorage.getItem(STORAGE_KEYS.PARTIES);
-    if (saved) {
+    if (saved !== null) {
       try {
         const parsed: InvitedParty[] = JSON.parse(saved);
         // If legacy mock demo parties exist (Roberto Gomez etc), purge and return initial parties
@@ -436,11 +436,12 @@ export const weddingStore = {
           localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(init));
           return init;
         }
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
+          // If the user deliberately cleared the parties ([]), respect it!
           return parsed.map(normalizePartyMembers);
         }
       } catch {
-        return getInitialParties();
+        return [];
       }
     }
     const init = getInitialParties();
@@ -448,16 +449,20 @@ export const weddingStore = {
     return init;
   },
 
-  saveParties(parties: InvitedParty[]) {
+  saveParties(parties: InvitedParty[], replace = false) {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(parties));
     window.dispatchEvent(new Event("wedding_parties_updated"));
     if (shouldSyncToNeon()) {
-      fetch("/api/guests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ parties }),
-      }).catch(console.error);
+      if (parties.length === 0) {
+        fetch("/api/guests?clearAll=true", { method: "DELETE" }).catch(console.error);
+      } else {
+        fetch("/api/guests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parties, replace }),
+        }).catch(console.error);
+      }
     }
   },
 
@@ -760,12 +765,29 @@ export const weddingStore = {
   },
 
   // Clear demo / test data helper
-  clearAllGuestData() {
+  async clearAllGuestData(): Promise<void> {
     this.saveParties([]);
     this.saveRsvps([]);
     if (shouldSyncToNeon()) {
-      fetch("/api/guests?clearAll=true", { method: "DELETE" }).catch(console.error);
-      fetch("/api/rsvp?clearAll=true", { method: "DELETE" }).catch(console.error);
+      try {
+        await Promise.all([
+          fetch("/api/guests?clearAll=true", { method: "DELETE" }),
+          fetch("/api/rsvp?clearAll=true", { method: "DELETE" }),
+        ]);
+      } catch (e) {
+        console.error("Failed to clear DB guest data:", e);
+      }
+    }
+  },
+
+  async clearAllParties(): Promise<void> {
+    this.saveParties([]);
+    if (shouldSyncToNeon()) {
+      try {
+        await fetch("/api/guests?clearAll=true", { method: "DELETE" });
+      } catch (e) {
+        console.error("Failed to clear DB parties:", e);
+      }
     }
   },
 
@@ -773,7 +795,7 @@ export const weddingStore = {
   getRsvps(): RsvpEntry[] {
     if (typeof window === "undefined") return getInitialRsvps();
     const saved = localStorage.getItem(STORAGE_KEYS.RSVPS);
-    if (saved) {
+    if (saved !== null) {
       try {
         const parsed: RsvpEntry[] = JSON.parse(saved);
         const hasLegacyMock = parsed.some(
@@ -785,9 +807,11 @@ export const weddingStore = {
           localStorage.setItem(STORAGE_KEYS.RSVPS, JSON.stringify([]));
           return [];
         }
-        return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
       } catch {
-        return getInitialRsvps();
+        return [];
       }
     }
     const init = getInitialRsvps();

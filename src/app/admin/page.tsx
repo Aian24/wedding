@@ -860,11 +860,34 @@ export default function AdminPage() {
       cancelButtonText: "Cancel, Keep Data",
     });
     if (confirmed) {
-      weddingStore.clearAllGuestData();
-      loadAllData();
+      setParties([]);
+      setRsvps([]);
+      setSelectedPartyIds([]);
+      setSelectedRsvpIds([]);
+      await weddingStore.clearAllGuestData();
+      await loadAllData();
       swalAlert.success(
         "Guest List Cleared",
         "All guest parties and RSVP records have been reset to 0."
+      );
+    }
+  };
+
+  const handleClearPartiesOnly = async () => {
+    const confirmed = await swalAlert.confirmDelete({
+      title: "Clear Master Guest List?",
+      text: "Are you sure you want to completely clear all invited parties from the master list? This will reset the list to 0.",
+      confirmButtonText: "Yes, Clear Guest List",
+      cancelButtonText: "Cancel, Keep Parties",
+    });
+    if (confirmed) {
+      setParties([]);
+      setSelectedPartyIds([]);
+      await weddingStore.clearAllParties();
+      await loadAllData();
+      swalAlert.success(
+        "Master List Cleared",
+        "All invited guest parties have been reset to 0."
       );
     }
   };
@@ -1141,9 +1164,19 @@ export default function AdminPage() {
     });
     if (confirmed) {
       const updated = parties.filter((p) => !selectedPartyIds.includes(p.id));
-      weddingStore.saveParties(updated);
+      setParties(updated);
       setSelectedPartyIds([]);
-      loadAllData();
+      weddingStore.saveParties(updated, true);
+      if (updated.length === 0 && shouldSyncToNeon()) {
+        await fetch("/api/guests?clearAll=true", { method: "DELETE" }).catch(console.error);
+      } else if (shouldSyncToNeon()) {
+        await fetch("/api/guests", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: selectedPartyIds }),
+        }).catch(console.error);
+      }
+      await loadAllData();
       swalAlert.success(
         "Parties Deleted",
         `Successfully deleted ${count} guest ${count === 1 ? "party" : "parties"}.`
@@ -2195,13 +2228,13 @@ export default function AdminPage() {
                 </button>
                 {parties.length > 0 && (
                   <button
-                    onClick={handleClearAllGuests}
-                    className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 border border-rose-200 transition-all whitespace-nowrap"
-                    title="Clear demo and reset guest list"
+                    onClick={handleClearPartiesOnly}
+                    className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 border border-rose-200 transition-all whitespace-nowrap cursor-pointer"
+                    title="Clear guest list parties"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Reset Guest List</span>
-                    <span className="sm:hidden">Reset</span>
+                    <span className="hidden sm:inline">Clear Guest List</span>
+                    <span className="sm:hidden">Clear</span>
                   </button>
                 )}
                 <button
@@ -3920,10 +3953,19 @@ export default function AdminPage() {
                           <span>Export CSV</span>
                         </button>
                         <button
-                          onClick={handleClearAllGuests}
-                          className="text-[11px] text-rose-600 hover:text-rose-800 font-medium hover:underline ml-1 cursor-pointer"
+                          onClick={handleClearPartiesOnly}
+                          className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 border border-rose-200 transition-all cursor-pointer shadow-2xs"
+                          title="Clear all parties from the guest list"
                         >
-                          Clear All Data
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Clear Guest List</span>
+                        </button>
+                        <button
+                          onClick={handleClearAllGuests}
+                          className="text-[11px] text-slate-500 hover:text-rose-700 font-medium hover:underline ml-1 cursor-pointer"
+                          title="Reset both guest parties and RSVP responses"
+                        >
+                          Clear All (Guests &amp; RSVPs)
                         </button>
                       </div>
                     </div>
