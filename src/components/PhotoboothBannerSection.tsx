@@ -105,3 +105,4 @@ export const PhotoboothBannerSection: React.FC = () => {
     </section>
   );
 };
+

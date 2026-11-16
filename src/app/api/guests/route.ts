@@ -5,13 +5,34 @@ import {
   deletePartyFromDb,
   clearAllPartiesFromDb,
 } from "@/lib/db";
+import { weddingData } from "@/data/weddingData";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q")?.toLowerCase().trim();
 
-    const parties = await getPartiesFromDb();
+    let parties = await getPartiesFromDb();
+
+    // Auto-seed initial 25 guest parties if DB table is currently empty
+    if (parties.length === 0 && Array.isArray(weddingData.invitedParties) && weddingData.invitedParties.length > 0) {
+      for (const p of weddingData.invitedParties) {
+        await savePartyToDb({
+          id: p.id,
+          partyName: p.partyName,
+          primaryGuest: p.primaryGuest,
+          email: p.email || "",
+          phone: p.phone || "",
+          maxSeats: p.maxSeats,
+          members: p.members,
+          tableNumber: p.tableNumber || "VIP Table 1",
+          status: p.status || "confirmed",
+          notes: p.notes || "",
+          lastUpdated: new Date().toLocaleString(),
+        });
+      }
+      parties = await getPartiesFromDb();
+    }
 
     if (!query) {
       return NextResponse.json({ success: true, parties });

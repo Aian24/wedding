@@ -287,8 +287,65 @@ export const getInitialRsvps = (): RsvpEntry[] => {
   return [];
 };
 
+export const normalizePartyMembers = (party: InvitedParty): InvitedParty => {
+  const expandedMembers: PartyMember[] = [];
+  (party.members || []).forEach((m, mIdx) => {
+    if (m.name && m.name.includes(",")) {
+      const parts = m.name.split(",").map((s) => s.trim()).filter(Boolean);
+      parts.forEach((partName, pIdx) => {
+        expandedMembers.push({
+          id: `${m.id}-${pIdx}`,
+          name: partName,
+          role: m.role || (mIdx === 0 && pIdx === 0 ? "Primary Guest" : "Guest"),
+          isAttending: m.isAttending !== false,
+        });
+      });
+    } else {
+      expandedMembers.push({
+        id: m.id || `m-${mIdx}`,
+        name: m.name,
+        role: m.role || (mIdx === 0 ? "Primary Guest" : "Guest"),
+        isAttending: m.isAttending !== false,
+      });
+    }
+  });
+
+  return {
+    ...party,
+    members:
+      expandedMembers.length > 0
+        ? expandedMembers
+        : [
+            {
+              id: `m-${party.id}-1`,
+              name: party.primaryGuest,
+              role: "Primary Guest",
+              isAttending: true,
+            },
+          ],
+    maxSeats: Math.max(party.maxSeats || 1, expandedMembers.length),
+  };
+};
+
 export const getInitialParties = (): InvitedParty[] => {
-  return [];
+  return (defaultData.invitedParties || []).map((p) => ({
+    id: p.id,
+    partyName: p.partyName,
+    primaryGuest: p.primaryGuest,
+    email: p.email || "",
+    phone: p.phone || "",
+    maxSeats: p.maxSeats,
+    members: p.members.map((m) => ({
+      id: m.id,
+      name: m.name,
+      role: m.role || "Guest",
+      isAttending: m.isAttending !== false,
+    })),
+    tableNumber: p.tableNumber || "VIP Table 1",
+    status: p.status || "confirmed",
+    notes: p.notes || "",
+    lastUpdated: new Date().toLocaleString(),
+  }));
 };
 
 export const getInitialThemeColors = (): ThemeColor[] => {
@@ -368,17 +425,20 @@ export const weddingStore = {
     if (saved) {
       try {
         const parsed: InvitedParty[] = JSON.parse(saved);
-        // If legacy demo parties exist with IDs pty-1, pty-2, or mock demo primary guest, purge them
+        // If legacy mock demo parties exist (Roberto Gomez etc), purge and return initial parties
         const hasLegacyMock = parsed.some(
           (p) =>
-            ["pty-1", "pty-2", "pty-3", "pty-4", "pty-5"].includes(p.id) ||
-            (p.primaryGuest && p.primaryGuest.toLowerCase().includes("roberto gomez"))
+            (p.primaryGuest && p.primaryGuest.toLowerCase().includes("roberto gomez")) ||
+            (p.partyName && p.partyName.toLowerCase().includes("gomez family"))
         );
         if (hasLegacyMock) {
-          localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify([]));
-          return [];
+          const init = getInitialParties();
+          localStorage.setItem(STORAGE_KEYS.PARTIES, JSON.stringify(init));
+          return init;
         }
-        return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(normalizePartyMembers);
+        }
       } catch {
         return getInitialParties();
       }
@@ -442,6 +502,47 @@ export const weddingStore = {
         method: "DELETE",
       }).catch(console.error);
     }
+  },
+
+  togglePartyMemberAttendance(partyId: string, memberId: string, forceAttending?: boolean): InvitedParty[] {
+    const parties = this.getParties();
+    const updated = parties.map((p) => {
+      if (p.id !== partyId) return p;
+      const newMembers = p.members.map((m) => {
+        if (m.id !== memberId) return m;
+        const nextAttending = typeof forceAttending === "boolean" ? forceAttending : !m.isAttending;
+        return { ...m, isAttending: nextAttending };
+      });
+      const anyAttending = newMembers.some((m) => m.isAttending);
+      const allAttending = newMembers.every((m) => m.isAttending);
+      const status: "pending" | "confirmed" | "declined" = allAttending
+        ? "confirmed"
+        : anyAttending
+        ? "confirmed"
+        : "declined";
+      return {
+        ...p,
+        members: newMembers,
+        status,
+        lastUpdated: new Date().toLocaleString(),
+      };
+    });
+    this.saveParties(updated);
+    const target = updated.find((p) => p.id === partyId);
+    if (target && shouldSyncToNeon()) {
+      fetch("/api/guests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(target),
+      }).catch(console.error);
+    }
+    return updated;
+  },
+
+  resetPartiesToTemplate(): InvitedParty[] {
+    const init = getInitialParties();
+    this.saveParties(init);
+    return init;
   },
 
   findPartyByGuestName(nameQuery: string): InvitedParty | null {

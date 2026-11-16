@@ -755,6 +755,32 @@ export default function AdminPage() {
     }
   };
 
+  const handleToggleMemberAttendance = (partyId: string, memberId: string, isAttending: boolean) => {
+    weddingStore.togglePartyMemberAttendance(partyId, memberId, isAttending);
+    loadAllData();
+    const party = parties.find((p) => p.id === partyId);
+    const member = party?.members.find((m) => m.id === memberId);
+    const name = member?.name || "Guest";
+    swalAlert.toastSuccess(
+      isAttending ? `${name} Present` : `${name} Absent`,
+      `${name} marked as ${isAttending ? "present" : "absent"}.`
+    );
+  };
+
+  const handleResetToOfficialParties = async () => {
+    const confirmed = await swalAlert.confirmDelete({
+      title: "Reset to Official Guest List?",
+      text: "This will reload the 25 official guest parties (50 seats) from the template.",
+      confirmButtonText: "Yes, Reset Guest List",
+      cancelButtonText: "Cancel",
+    });
+    if (confirmed) {
+      weddingStore.resetPartiesToTemplate();
+      loadAllData();
+      swalAlert.toastSuccess("Guest List Reset", "25 guest parties (50 seats) loaded successfully.");
+    }
+  };
+
   // Color Palette Actions
   const handleOpenAddColor = () => {
     setEditingColor(null);
@@ -1234,7 +1260,7 @@ export default function AdminPage() {
       `"${(p.tableNumber || "Unassigned").replace(/"/g, '""')}"`,
       `"${p.maxSeats}"`,
       `"${p.members.length}"`,
-      `"${p.members.map((m) => m.name).join("; ").replace(/"/g, '""')}"`,
+      `"${p.members.map((m) => `${m.name} (${m.isAttending ? "Present" : "Absent"})`).join("; ").replace(/"/g, '""')}"`,
       `"${p.phone || ""}"`,
       `"${p.email || ""}"`,
       `"${(p.notes || "").replace(/"/g, '""')}"`,
@@ -1277,12 +1303,15 @@ export default function AdminPage() {
   // Download Templates
   const handleDownloadPartyTemplate = () => {
     const sample =
-`Party Name,Primary Guest,Table Number,Max Seats,Members,Phone,Email,Notes
-"Mr. & Mrs. Juan dela Cruz","Juan dela Cruz","VIP Table 1",2,"Juan dela Cruz, Maria dela Cruz","+63 917 123 4567","juan@example.com","Close Family"
-"Santos Family","Robert Santos","Table 3",4,"Robert Santos, Elena Santos, Marco Santos, Chloe Santos","+63 918 987 6543","robert@example.com","Ninong and family"
-"Engr. & Mrs. Manuel Cruz","Manuel Cruz","Principal Sponsors Table",2,"Manuel Cruz, Patricia Cruz","+63 917 555 1234","manuel@example.com","Principal Sponsor"`;
+`PRIMARY GUEST,FLOWER GIRL,FLOWER BOY,SECONDARY SPONSOR,MEMBERS,MAX SEATS
+"Tito Basagre, Gloria Basagre",,,,,2
+"Michelle Accad, Melvin Garcia","Malia Garcia, Cassey Garcia",,,,4
+"Michael Rivera, Clariz Penoz",,,Dylan Penoz,,3
+"Marco Molina, Jona Molina",,,MJ Molina,"Najah Molina, Jenna Molina",5
+"KC ofilas, JR Ofilas",,Azriel Ofilas,,Sabria Ofilas,4
+"Bella Martina De Jesus",,,,"Julie Baisi, Jane Tutor",3`;
     downloadCsvFile("Aian_Dang_Guest_List_Template.csv", sample);
-    swalAlert.toastSuccess("Template Downloaded", "Guest List CSV template is ready to fill and import.");
+    swalAlert.toastSuccess("Template Downloaded", "Official Guest List CSV template is ready to fill and import.");
   };
 
   const handleDownloadRsvpTemplate = () => {
@@ -1297,6 +1326,14 @@ export default function AdminPage() {
 
   // SheetJS Parsers
   const parsePartiesFromSheet = (jsonData: any[]): InvitedParty[] => {
+    const splitNames = (val: string): string[] => {
+      if (!val) return [];
+      return val
+        .split(/[,;\n\r&]+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    };
+
     const result: InvitedParty[] = [];
     jsonData.forEach((row, index) => {
       const getVal = (aliases: string[]): string => {
@@ -1312,41 +1349,63 @@ export default function AdminPage() {
         return "";
       };
 
-      const primaryGuest = getVal(["primary guest", "guest name", "primary", "name", "full name"]);
+      const primaryGuestVal = getVal(["primary guest", "guest name", "primary", "name", "full name"]);
       const rawPartyName = getVal(["party name", "household", "family", "party title", "party"]);
-      const partyName = rawPartyName || (primaryGuest ? `${primaryGuest} Party` : `Party #${index + 1}`);
-      const actualPrimary = primaryGuest || rawPartyName || `Guest #${index + 1}`;
+      const flowerGirlVal = getVal(["flower girl", "flower girls"]);
+      const flowerBoyVal = getVal(["flower boy", "flower boys"]);
+      const secondarySponsorVal = getVal(["secondary sponsor", "secondary sponsors", "secondary"]);
+      const membersVal = getVal(["members", "member names", "companions", "plus ones", "guests"]);
+      const rawMaxSeats = getVal(["max seats", "seats", "headcount", "allowed seats", "seats count"]);
 
-      const tableNumber = getVal(["table number", "table", "table assignment", "seating"]) || "VIP Table 1";
+      const tableNumber = getVal(["table number", "table", "table assignment", "seating"]) || `Table ${(index % 8) + 1}`;
       const phone = getVal(["phone", "mobile", "contact", "cellphone"]);
       const email = getVal(["email", "e-mail"]);
       const notes = getVal(["notes", "note", "remarks", "dietary"]);
-      const rawMaxSeats = getVal(["max seats", "seats", "headcount", "allowed seats", "seats count"]);
 
-      const membersVal = getVal(["members", "member names", "companions", "plus ones", "guests"]);
-      let memberNames: string[] = [];
-      if (membersVal) {
-        memberNames = membersVal
-          .split(/[,;\n\r&]+/)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0);
+      const primaryNames = splitNames(primaryGuestVal);
+      const flowerGirls = splitNames(flowerGirlVal);
+      const flowerBoys = splitNames(flowerBoyVal);
+      const secondarySponsors = splitNames(secondarySponsorVal);
+      const generalMembers = splitNames(membersVal);
+
+      const partyMembers: PartyMember[] = [];
+      const addedNames = new Set<string>();
+
+      const addMember = (name: string, role: string) => {
+        const clean = name.trim();
+        if (!clean) return;
+        const lower = clean.toLowerCase();
+        if (addedNames.has(lower)) return;
+        addedNames.add(lower);
+        partyMembers.push({
+          id: `imp-m-${index}-${partyMembers.length + 1}-${Date.now()}`,
+          name: clean,
+          role,
+          isAttending: true,
+        });
+      };
+
+      // Add members with their specific roles
+      primaryNames.forEach((n, idx) => addMember(n, idx === 0 ? "Primary Guest" : "Guest"));
+      flowerGirls.forEach((n) => addMember(n, "Flower Girl"));
+      flowerBoys.forEach((n) => addMember(n, "Flower Boy"));
+      secondarySponsors.forEach((n) => addMember(n, "Secondary Sponsor"));
+      generalMembers.forEach((n) => addMember(n, "Guest"));
+
+      const actualPrimary = primaryNames[0] || rawPartyName || `Guest #${index + 1}`;
+      if (partyMembers.length === 0) {
+        addMember(actualPrimary, "Primary Guest");
       }
 
-      if (actualPrimary && !memberNames.some((m) => m.toLowerCase() === actualPrimary.toLowerCase())) {
-        memberNames.unshift(actualPrimary);
-      }
-      if (memberNames.length === 0) {
-        memberNames = [actualPrimary];
-      }
+      const partyName =
+        rawPartyName ||
+        (primaryNames.length > 1
+          ? primaryNames.join(" & ")
+          : primaryGuestVal || `${actualPrimary} Party`);
 
-      const maxSeats = rawMaxSeats ? parseInt(rawMaxSeats, 10) || memberNames.length : memberNames.length;
-
-      const partyMembers: PartyMember[] = memberNames.map((name, mIdx) => ({
-        id: `imp-m-${index}-${mIdx}-${Date.now()}`,
-        name,
-        role: mIdx === 0 ? "Primary Guest" : "Guest / Plus One",
-        isAttending: true,
-      }));
+      const maxSeats = rawMaxSeats
+        ? parseInt(rawMaxSeats, 10) || partyMembers.length
+        : partyMembers.length;
 
       result.push({
         id: `pty-imp-${Date.now()}-${index}`,
@@ -1358,7 +1417,7 @@ export default function AdminPage() {
         members: partyMembers,
         tableNumber,
         notes,
-        status: "pending",
+        status: "confirmed",
         lastUpdated: new Date().toLocaleString(),
       });
     });
@@ -3824,6 +3883,14 @@ export default function AdminPage() {
 
                       <div className="flex flex-wrap items-center gap-2">
                         <button
+                          onClick={handleResetToOfficialParties}
+                          className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold flex items-center gap-1.5 border border-amber-200 transition-all cursor-pointer shadow-2xs"
+                          title="Reload the 25 official parties (50 guests) from the template"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Load Official Guest List</span>
+                        </button>
+                        <button
                           onClick={() => partyFileInputRef.current?.click()}
                           className="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-1.5 border border-emerald-200 transition-all cursor-pointer"
                           title="Import guests from Excel or CSV file"
@@ -3917,9 +3984,9 @@ export default function AdminPage() {
                               />
                             </th>
                             <th className="p-3.5 whitespace-nowrap min-w-[280px]">Party / Primary Guest</th>
-                            <th className="p-3.5 whitespace-nowrap min-w-[180px]">Table Assignment</th>
-                            <th className="p-3.5 whitespace-nowrap min-w-[340px]">Invited Members &amp; Status</th>
-                            <th className="p-3.5 whitespace-nowrap min-w-[220px]">Contact</th>
+                            <th className="p-3.5 whitespace-nowrap min-w-[160px]">Table Assignment</th>
+                            <th className="p-3.5 whitespace-nowrap min-w-[380px]">Guest Members &amp; Attendance (Present / Absent)</th>
+                            <th className="p-3.5 whitespace-nowrap min-w-[200px]">Contact</th>
                             <th className="p-3.5 text-right whitespace-nowrap min-w-[100px]">Actions</th>
                           </tr>
                         </thead>
@@ -3954,19 +4021,50 @@ export default function AdminPage() {
                                   {party.tableNumber || "Unassigned"}
                                 </span>
                               </td>
-                              <td className="p-3.5 whitespace-nowrap min-w-[340px]">
-                                <div className="flex items-center gap-1.5 whitespace-nowrap flex-nowrap">
+                              <td className="p-3.5 min-w-[380px]">
+                                <div className="flex flex-col gap-1.5 py-0.5">
                                   {party.members.map((m) => (
-                                    <span
+                                    <div
                                       key={m.id}
-                                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap shrink-0 inline-flex items-center ${
-                                        m.isAttending
-                                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                          : "bg-slate-100 text-slate-600 border border-slate-200"
-                                      }`}
+                                      className="flex items-center justify-between gap-3 bg-slate-50/80 hover:bg-slate-100/80 px-2.5 py-1.5 rounded-xl border border-slate-200/80 transition-colors"
                                     >
-                                      {m.name} ({m.isAttending ? "Present" : "Absent"})
-                                    </span>
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="font-semibold text-slate-800 text-xs whitespace-nowrap">
+                                          {m.name}
+                                        </span>
+                                        {m.role && m.role !== "Guest" && m.role !== "Plus One / Guest" && (
+                                          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100 font-bold whitespace-nowrap">
+                                            {m.role}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="inline-flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shrink-0 shadow-2xs">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleMemberAttendance(party.id, m.id, true)}
+                                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide transition-all cursor-pointer ${
+                                            m.isAttending
+                                              ? "bg-emerald-600 text-white shadow-2xs"
+                                              : "text-slate-400 hover:text-emerald-700 hover:bg-emerald-50"
+                                          }`}
+                                          title={`Mark ${m.name} as Present`}
+                                        >
+                                          Present
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleMemberAttendance(party.id, m.id, false)}
+                                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold tracking-wide transition-all cursor-pointer ${
+                                            !m.isAttending
+                                              ? "bg-rose-600 text-white shadow-2xs"
+                                              : "text-slate-400 hover:text-rose-700 hover:bg-rose-50"
+                                          }`}
+                                          title={`Mark ${m.name} as Absent`}
+                                        >
+                                          Absent
+                                        </button>
+                                      </div>
+                                    </div>
                                   ))}
                                 </div>
                               </td>
@@ -5405,8 +5503,44 @@ export default function AdminPage() {
                             )
                           );
                         }}
-                        className="w-32 px-3 py-1.5 rounded-lg border border-slate-200 text-xs"
+                        className="w-28 px-3 py-1.5 rounded-lg border border-slate-200 text-xs"
                       />
+                      <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 shrink-0 shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPartyFormMembers(
+                              partyFormMembers.map((item) =>
+                                item.id === m.id ? { ...item, isAttending: true } : item
+                              )
+                            )
+                          }
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                            m.isAttending
+                              ? "bg-emerald-600 text-white shadow-2xs"
+                              : "text-slate-400 hover:text-emerald-700"
+                          }`}
+                        >
+                          Present
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPartyFormMembers(
+                              partyFormMembers.map((item) =>
+                                item.id === m.id ? { ...item, isAttending: false } : item
+                              )
+                            )
+                          }
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                            !m.isAttending
+                              ? "bg-rose-600 text-white shadow-2xs"
+                              : "text-slate-400 hover:text-rose-700"
+                          }`}
+                        >
+                          Absent
+                        </button>
+                      </div>
                       {partyFormMembers.length > 1 && (
                         <button
                           type="button"

@@ -118,12 +118,312 @@ export interface WeddingData {
       isAttending: boolean;
     }[];
     tableNumber?: string;
+    status?: "pending" | "confirmed" | "declined";
     notes?: string;
   }[];
 }
 
 export const weddingData: WeddingData = {
-  invitedParties: [],
+  invitedParties: [
+    {
+      id: "pty-guest-1",
+      partyName: "Tito & Gloria Basagre",
+      primaryGuest: "Tito Basagre",
+      maxSeats: 2,
+      tableNumber: "Table 1",
+      status: "confirmed",
+      members: [
+        { id: "m-1-1", name: "Tito Basagre", role: "Primary Guest", isAttending: true },
+        { id: "m-1-2", name: "Gloria Basagre", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-2",
+      partyName: "Cecilia De Jesus & Danilo Rivera",
+      primaryGuest: "Cecilia De Jesus",
+      maxSeats: 2,
+      tableNumber: "Table 1",
+      status: "confirmed",
+      members: [
+        { id: "m-2-1", name: "Cecilia De Jesus", role: "Primary Guest", isAttending: true },
+        { id: "m-2-2", name: "Danilo Rivera", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-3",
+      partyName: "Daniela Rivera",
+      primaryGuest: "Daniela Rivera",
+      maxSeats: 1,
+      tableNumber: "Table 2",
+      status: "confirmed",
+      members: [
+        { id: "m-3-1", name: "Daniela Rivera", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-4",
+      partyName: "Gian Basagre",
+      primaryGuest: "Gian Basagre",
+      maxSeats: 1,
+      tableNumber: "Table 2",
+      status: "confirmed",
+      members: [
+        { id: "m-4-1", name: "Gian Basagre", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-5",
+      partyName: "Michelle Accad & Melvin Garcia",
+      primaryGuest: "Michelle Accad",
+      maxSeats: 4,
+      tableNumber: "Table 3",
+      status: "confirmed",
+      members: [
+        { id: "m-5-1", name: "Michelle Accad", role: "Primary Guest", isAttending: true },
+        { id: "m-5-2", name: "Melvin Garcia", role: "Guest", isAttending: true },
+        { id: "m-5-3", name: "Malia Garcia", role: "Flower Girl", isAttending: true },
+        { id: "m-5-4", name: "Cassey Garcia", role: "Flower Girl", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-6",
+      partyName: "Michael Rivera & Clariz Penoz",
+      primaryGuest: "Michael Rivera",
+      maxSeats: 3,
+      tableNumber: "Table 3",
+      status: "confirmed",
+      members: [
+        { id: "m-6-1", name: "Michael Rivera", role: "Primary Guest", isAttending: true },
+        { id: "m-6-2", name: "Clariz Penoz", role: "Guest", isAttending: true },
+        { id: "m-6-3", name: "Dylan Penoz", role: "Secondary Sponsor", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-7",
+      partyName: "Jessa Rivera",
+      primaryGuest: "Jessa Rivera",
+      maxSeats: 1,
+      tableNumber: "Table 4",
+      status: "confirmed",
+      members: [
+        { id: "m-7-1", name: "Jessa Rivera", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-8",
+      partyName: "Ma. Cherry Lane Oriola & Rain",
+      primaryGuest: "Ma. Cherry Lane Oriola",
+      maxSeats: 2,
+      tableNumber: "Table 4",
+      status: "confirmed",
+      members: [
+        { id: "m-8-1", name: "Ma. Cherry Lane Oriola", role: "Primary Guest", isAttending: true },
+        { id: "m-8-2", name: "Rain", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-9",
+      partyName: "Jhean Anne Revillo",
+      primaryGuest: "Jhean Anne Revillo",
+      maxSeats: 1,
+      tableNumber: "Table 4",
+      status: "confirmed",
+      members: [
+        { id: "m-9-1", name: "Jhean Anne Revillo", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-10",
+      partyName: "Carmina Alea Logatiman",
+      primaryGuest: "Carmina Alea Logatiman",
+      maxSeats: 1,
+      tableNumber: "Table 4",
+      status: "confirmed",
+      members: [
+        { id: "m-10-1", name: "Carmina Alea Logatiman", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-11",
+      partyName: "Elyza Balontong",
+      primaryGuest: "Elyza Balontong",
+      maxSeats: 1,
+      tableNumber: "Table 5",
+      status: "confirmed",
+      members: [
+        { id: "m-11-1", name: "Elyza Balontong", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-12",
+      partyName: "MJ Portes & Gian Carlo Rivera",
+      primaryGuest: "MJ Portes",
+      maxSeats: 2,
+      tableNumber: "Table 5",
+      status: "confirmed",
+      members: [
+        { id: "m-12-1", name: "MJ Portes", role: "Primary Guest", isAttending: true },
+        { id: "m-12-2", name: "Gian Carlo Rivera", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-13",
+      partyName: "John Merk Tagacay",
+      primaryGuest: "John Merk Tagacay",
+      maxSeats: 1,
+      tableNumber: "Table 5",
+      status: "confirmed",
+      members: [
+        { id: "m-13-1", name: "John Merk Tagacay", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-14",
+      partyName: "Christian Accad & Star",
+      primaryGuest: "Christian Accad",
+      maxSeats: 2,
+      tableNumber: "Table 5",
+      status: "confirmed",
+      members: [
+        { id: "m-14-1", name: "Christian Accad", role: "Primary Guest", isAttending: true },
+        { id: "m-14-2", name: "Star", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-15",
+      partyName: "Jed Steven",
+      primaryGuest: "Jed Steven",
+      maxSeats: 1,
+      tableNumber: "Table 6",
+      status: "confirmed",
+      members: [
+        { id: "m-15-1", name: "Jed Steven", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-16",
+      partyName: "Michael Riera",
+      primaryGuest: "Michael Riera",
+      maxSeats: 1,
+      tableNumber: "Table 6",
+      status: "confirmed",
+      members: [
+        { id: "m-16-1", name: "Michael Riera", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-17",
+      partyName: "Angelo Gabriel Celicous",
+      primaryGuest: "Angelo Gabriel Celicous",
+      maxSeats: 1,
+      tableNumber: "Table 6",
+      status: "confirmed",
+      members: [
+        { id: "m-17-1", name: "Angelo Gabriel Celicous", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-18",
+      partyName: "Jayson Falabi & Wife",
+      primaryGuest: "Jayson Falabi",
+      maxSeats: 2,
+      tableNumber: "Table 6",
+      status: "confirmed",
+      members: [
+        { id: "m-18-1", name: "Jayson Falabi", role: "Primary Guest", isAttending: true },
+        { id: "m-18-2", name: "Wife of Jayson", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-19",
+      partyName: "Angelo Gayda",
+      primaryGuest: "Angelo Gayda",
+      maxSeats: 1,
+      tableNumber: "Table 6",
+      status: "confirmed",
+      members: [
+        { id: "m-19-1", name: "Angelo Gayda", role: "Primary Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-20",
+      partyName: "Arnel & Monaliza De Jesus",
+      primaryGuest: "Arnel De Jesus",
+      maxSeats: 2,
+      tableNumber: "Table 7",
+      status: "confirmed",
+      members: [
+        { id: "m-20-1", name: "Arnel De Jesus", role: "Primary Guest", isAttending: true },
+        { id: "m-20-2", name: "Monaliza De Jesus", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-21",
+      partyName: "Marco & Jona Molina",
+      primaryGuest: "Marco Molina",
+      maxSeats: 5,
+      tableNumber: "Table 7",
+      status: "confirmed",
+      members: [
+        { id: "m-21-1", name: "Marco Molina", role: "Primary Guest", isAttending: true },
+        { id: "m-21-2", name: "Jona Molina", role: "Guest", isAttending: true },
+        { id: "m-21-3", name: "MJ Molina", role: "Secondary Sponsor", isAttending: true },
+        { id: "m-21-4", name: "Najah Molina", role: "Guest", isAttending: true },
+        { id: "m-21-5", name: "Jenna Molina", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-22",
+      partyName: "KC & JR Ofilas",
+      primaryGuest: "KC Ofilas",
+      maxSeats: 4,
+      tableNumber: "Table 8",
+      status: "confirmed",
+      members: [
+        { id: "m-22-1", name: "KC Ofilas", role: "Primary Guest", isAttending: true },
+        { id: "m-22-2", name: "JR Ofilas", role: "Guest", isAttending: true },
+        { id: "m-22-3", name: "Azriel Ofilas", role: "Flower Boy", isAttending: true },
+        { id: "m-22-4", name: "Sabria Ofilas", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-23",
+      partyName: "Zyler Viel & Marvin Rivera",
+      primaryGuest: "Zyler Viel Rivera",
+      maxSeats: 2,
+      tableNumber: "Table 8",
+      status: "confirmed",
+      members: [
+        { id: "m-23-1", name: "Zyler Viel Rivera", role: "Primary Guest", isAttending: true },
+        { id: "m-23-2", name: "Marvin Rivera", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-24",
+      partyName: "Zachary Rivera & Companion",
+      primaryGuest: "Zachary Rivera",
+      maxSeats: 2,
+      tableNumber: "Table 8",
+      status: "confirmed",
+      members: [
+        { id: "m-24-1", name: "Zachary Rivera", role: "Primary Guest", isAttending: true },
+        { id: "m-24-2", name: "Yaya", role: "Guest", isAttending: true },
+      ],
+    },
+    {
+      id: "pty-guest-25",
+      partyName: "Bella Martina De Jesus & Companions",
+      primaryGuest: "Bella Martina De Jesus",
+      maxSeats: 3,
+      tableNumber: "Table 8",
+      status: "confirmed",
+      members: [
+        { id: "m-25-1", name: "Bella Martina De Jesus", role: "Primary Guest", isAttending: true },
+        { id: "m-25-2", name: "Julie Baisi", role: "Guest", isAttending: true },
+        { id: "m-25-3", name: "Jane Tutor", role: "Guest", isAttending: true },
+      ],
+    },
+  ],
   groom: {
     fullName: "Aian Christopher Ramos",
     nickname: "Aian",
